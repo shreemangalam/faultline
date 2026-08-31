@@ -1,20 +1,20 @@
 package dev.shreemangalam.faultline.survey.service;
 
 import dev.shreemangalam.faultline.shared.domain.HealthStatus;
-import dev.shreemangalam.faultline.survey.domain.Landscape;
 import dev.shreemangalam.faultline.survey.domain.LandscapeHealthMap;
 import org.springframework.stereotype.Service;
 
 @Service
 public class LandscapeHealthMapService {
 
-    private final Landscape landscape;
+    private final ActiveLandscapeService activeLandscapeService;
 
-    public LandscapeHealthMapService(Landscape landscape) {
-        this.landscape = landscape;
+    public LandscapeHealthMapService(ActiveLandscapeService activeLandscapeService) {
+        this.activeLandscapeService = activeLandscapeService;
     }
 
     public LandscapeHealthMap healthMap() {
+        var landscape = activeLandscapeService.currentLandscape();
         return new LandscapeHealthMap(
                 landscape.systems().stream()
                         .map(system -> new LandscapeHealthMap.SystemHealth(
