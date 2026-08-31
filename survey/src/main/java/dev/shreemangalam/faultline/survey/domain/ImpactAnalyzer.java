@@ -39,7 +39,7 @@ public final class ImpactAnalyzer {
             for (IntegrationEdge edge : outgoingEdges.get(sourceSystemId)) {
                 int impactRing = sourceDistance + 1;
                 affectedIntegrations.add(new ImpactAnalysis.AffectedIntegration(
-                        edge.id(), edge.sourceSystemId(), edge.targetSystemId(), edge.protocol(), impactRing));
+                        edge.id(), edge.sourceSystemId(), edge.targetSystemId(), edge.protocol(), edge.dataDomain(), edge.slaClass(), impactRing));
                 if (!distances.containsKey(edge.targetSystemId())) {
                     distances.put(edge.targetSystemId(), impactRing);
                     toVisit.add(edge.targetSystemId());

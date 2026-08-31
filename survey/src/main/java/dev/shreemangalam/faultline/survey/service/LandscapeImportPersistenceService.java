@@ -53,7 +53,9 @@ public class LandscapeImportPersistenceService {
                         integration.id(),
                         integration.sourceSystemId(),
                         integration.targetSystemId(),
-                        integration.protocol()))
+                        integration.protocol(),
+                        integration.dataDomain(),
+                        integration.slaClass()))
                 .toList());
         return findById(importId).orElseThrow();
     }
@@ -72,7 +74,9 @@ public class LandscapeImportPersistenceService {
                                 integration.getIntegrationId(),
                                 integration.getSourceSystemId(),
                                 integration.getTargetSystemId(),
-                                integration.getProtocol()))
+                                integration.getProtocol(),
+                                integration.getDataDomain(),
+                                integration.getSlaClass()))
                         .toList()));
     }
 }

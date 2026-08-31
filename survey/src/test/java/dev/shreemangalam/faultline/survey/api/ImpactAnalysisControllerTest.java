@@ -29,8 +29,8 @@ class ImpactAnalysisControllerTest {
                 .andExpect(jsonPath("$.incident.systemId").value("SAP_ECC"))
                 .andExpect(jsonPath("$.affectedSystems[0].systemId").value("CPI_ORDER_SYNC"))
                 .andExpect(jsonPath("$.affectedSystems[0].impactRing").value(1))
-                .andExpect(jsonPath("$.affectedSystems[2].systemId").value("SALESFORCE"))
-                .andExpect(jsonPath("$.affectedSystems[2].impactRing").value(2))
+                .andExpect(jsonPath("$.affectedSystems[4].systemId").value("SALESFORCE"))
+                .andExpect(jsonPath("$.affectedSystems[4].impactRing").value(2))
                 .andExpect(jsonPath("$.affectedIntegrations[0].integrationId").value("ECC_TO_CPI_ORDER"))
                 .andExpect(jsonPath("$.affectedIntegrations[0].impactRing").value(1));
     }

@@ -19,13 +19,21 @@ public record LandscapeImportValidationRequest(
                                 integration.id(),
                                 integration.sourceSystemId(),
                                 integration.targetSystemId(),
-                                integration.protocol()))
+                                integration.protocol(),
+                                integration.dataDomain(),
+                                integration.slaClass()))
                         .toList());
     }
 
     public record SystemRequest(String id, String label, int criticality) {
     }
 
-    public record IntegrationRequest(String id, String sourceSystemId, String targetSystemId, String protocol) {
+    public record IntegrationRequest(
+            String id,
+            String sourceSystemId,
+            String targetSystemId,
+            String protocol,
+            String dataDomain,
+            String slaClass) {
     }
 }

@@ -22,6 +22,8 @@ public record StoredLandscape(
             String integrationId,
             String sourceSystemId,
             String targetSystemId,
-            String protocol) {
+            String protocol,
+            String dataDomain,
+            String slaClass) {
     }
 }

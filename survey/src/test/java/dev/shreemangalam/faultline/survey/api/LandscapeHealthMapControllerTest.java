@@ -21,10 +21,10 @@ class LandscapeHealthMapControllerTest {
     void exposesTheSeededLandscapeInADashboardFriendlyShape() throws Exception {
         mockMvc.perform(get("/api/v1/landscape/health-map"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.systems.length()").value(8))
+                .andExpect(jsonPath("$.systems.length()").value(16))
                 .andExpect(jsonPath("$.systems[0].systemId").value("SAP_ECC"))
                 .andExpect(jsonPath("$.systems[0].health").value("HEALTHY"))
-                .andExpect(jsonPath("$.integrations.length()").value(7))
+                .andExpect(jsonPath("$.integrations.length()").value(35))
                 .andExpect(jsonPath("$.integrations[0].integrationId").value("ECC_TO_CPI_ORDER"));
     }
 }

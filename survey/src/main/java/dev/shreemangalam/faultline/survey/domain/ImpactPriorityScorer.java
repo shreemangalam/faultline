@@ -34,7 +34,7 @@ public final class ImpactPriorityScorer {
         int fanOutPoints = (int) Math.min(20, landscape.integrations().stream()
                 .filter(integration -> integration.sourceSystemId().equals(system.id()))
                 .count() * 2);
-        int slaPoints = incomingIntegration(analysis, affectedSystem).map(integration -> slaClass(integration.protocol()).impactPoints())
+        int slaPoints = incomingIntegration(analysis, affectedSystem).map(integration -> integration.slaClass().impactPoints())
                 .orElse(0);
         int proximityPoints = Math.max(0, 20 - ((affectedSystem.impactRing() - 1) * 5));
         ImpactPriorityReport.ScoreBreakdown breakdown = new ImpactPriorityReport.ScoreBreakdown(
@@ -52,13 +52,5 @@ public final class ImpactPriorityScorer {
                 .filter(integration -> integration.targetSystemId().equals(affectedSystem.systemId()))
                 .filter(integration -> integration.impactRing() == affectedSystem.impactRing())
                 .findFirst();
-    }
-
-    private SlaClass slaClass(String protocol) {
-        return switch (protocol) {
-            case "RFC", "REST", "SOAP" -> SlaClass.REAL_TIME;
-            case "IDOC" -> SlaClass.NEAR_REAL_TIME;
-            default -> SlaClass.BATCH;
-        };
     }
 }

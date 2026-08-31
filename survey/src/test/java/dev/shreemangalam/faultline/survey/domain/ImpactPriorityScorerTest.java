@@ -21,8 +21,8 @@ class ImpactPriorityScorerTest {
                         new SystemNode(id("SYSTEM_C"), "System C", 6),
                         new SystemNode(id("SYSTEM_D"), "System D", 5)),
                 List.of(
-                        new IntegrationEdge("A_TO_B", id("SYSTEM_A"), id("SYSTEM_B"), "REST"),
-                        new IntegrationEdge("A_TO_C", id("SYSTEM_A"), id("SYSTEM_C"), "IDOC"),
+                        new IntegrationEdge("A_TO_B", id("SYSTEM_A"), id("SYSTEM_B"), "REST", "ORDER", SlaClass.REAL_TIME),
+                        new IntegrationEdge("A_TO_C", id("SYSTEM_A"), id("SYSTEM_C"), "IDOC", "INVOICE", SlaClass.NEAR_REAL_TIME),
                         new IntegrationEdge("B_TO_D", id("SYSTEM_B"), id("SYSTEM_D"), "REST")));
 
         ImpactPriorityReport report = scorer.score(landscape, analyzer.analyze(landscape, id("SYSTEM_A")));

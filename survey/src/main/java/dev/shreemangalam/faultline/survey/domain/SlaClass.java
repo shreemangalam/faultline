@@ -14,4 +14,8 @@ public enum SlaClass {
     public int impactPoints() {
         return impactPoints;
     }
+
+    public static SlaClass fromValue(String value) {
+        return SlaClass.valueOf(value.trim().toUpperCase(java.util.Locale.ROOT));
+    }
 }

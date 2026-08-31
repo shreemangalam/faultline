@@ -29,6 +29,12 @@ public class LandscapeIntegrationEntity {
     @Column(nullable = false)
     private String protocol;
 
+    @Column(name = "data_domain", nullable = false)
+    private String dataDomain;
+
+    @Column(name = "sla_class", nullable = false)
+    private String slaClass;
+
     protected LandscapeIntegrationEntity() {
     }
 
@@ -38,28 +44,23 @@ public class LandscapeIntegrationEntity {
             String integrationId,
             String sourceSystemId,
             String targetSystemId,
-            String protocol) {
+            String protocol,
+            String dataDomain,
+            String slaClass) {
         this.id = id;
         this.importId = importId;
         this.integrationId = integrationId;
         this.sourceSystemId = sourceSystemId;
         this.targetSystemId = targetSystemId;
         this.protocol = protocol;
+        this.dataDomain = dataDomain;
+        this.slaClass = slaClass;
     }
 
-    public String getIntegrationId() {
-        return integrationId;
-    }
-
-    public String getSourceSystemId() {
-        return sourceSystemId;
-    }
-
-    public String getTargetSystemId() {
-        return targetSystemId;
-    }
-
-    public String getProtocol() {
-        return protocol;
-    }
+    public String getIntegrationId() { return integrationId; }
+    public String getSourceSystemId() { return sourceSystemId; }
+    public String getTargetSystemId() { return targetSystemId; }
+    public String getProtocol() { return protocol; }
+    public String getDataDomain() { return dataDomain; }
+    public String getSlaClass() { return slaClass; }
 }

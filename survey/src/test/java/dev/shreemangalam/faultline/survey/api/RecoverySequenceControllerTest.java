@@ -29,7 +29,7 @@ class RecoverySequenceControllerTest {
                 .andExpect(jsonPath("$.failedSystemId").value("SAP_ECC"))
                 .andExpect(jsonPath("$.recoverySequence[0]").value("SAP_ECC"))
                 .andExpect(jsonPath("$.recoverySequence[1]").value("CPI_INVOICE_SYNC"))
-                .andExpect(jsonPath("$.cycleWarning").value(false))
-                .andExpect(jsonPath("$.unresolvedSystemIds").isEmpty());
+                .andExpect(jsonPath("$.cycleWarning").value(true))
+                .andExpect(jsonPath("$.unresolvedSystemIds[0]").value("CARRIER_API"));
     }
 }

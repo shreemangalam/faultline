@@ -27,9 +27,9 @@ class ImpactPriorityControllerTest {
                                 """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.failedSystemId").value("SAP_ECC"))
-                .andExpect(jsonPath("$.priorities[0].systemId").value("CPI_ORDER_SYNC"))
+                .andExpect(jsonPath("$.priorities[0].systemId").value("BANK_GATEWAY"))
                 .andExpect(jsonPath("$.priorities[0].severity").value("CRITICAL"))
-                .andExpect(jsonPath("$.priorities[0].scoreBreakdown.criticalityPoints").value(90))
-                .andExpect(jsonPath("$.priorities[0].scoreBreakdown.fanOutPoints").value(6));
+                .andExpect(jsonPath("$.priorities[0].scoreBreakdown.criticalityPoints").value(100))
+                .andExpect(jsonPath("$.priorities[0].scoreBreakdown.fanOutPoints").value(4));
     }
 }
