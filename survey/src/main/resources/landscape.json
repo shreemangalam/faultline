@@ -1,0 +1,21 @@
+{
+  "systems": [
+    { "id": "SAP_ECC", "label": "SAP ECC", "criticality": 10 },
+    { "id": "CPI_ORDER_SYNC", "label": "CPI Order Sync", "criticality": 9 },
+    { "id": "CPI_INVOICE_SYNC", "label": "CPI Invoice Sync", "criticality": 8 },
+    { "id": "SALESFORCE", "label": "Salesforce", "criticality": 8 },
+    { "id": "LEGACY_WMS", "label": "Legacy WMS", "criticality": 9 },
+    { "id": "CUSTOMER_PORTAL", "label": "Customer Portal", "criticality": 7 },
+    { "id": "FINANCE_PORTAL", "label": "Finance Portal", "criticality": 7 },
+    { "id": "SAP_ARIBA", "label": "SAP Ariba", "criticality": 6 }
+  ],
+  "integrations": [
+    { "id": "ECC_TO_CPI_ORDER", "sourceSystemId": "SAP_ECC", "targetSystemId": "CPI_ORDER_SYNC", "protocol": "RFC" },
+    { "id": "ECC_TO_CPI_INVOICE", "sourceSystemId": "SAP_ECC", "targetSystemId": "CPI_INVOICE_SYNC", "protocol": "IDOC" },
+    { "id": "CPI_ORDER_TO_SALESFORCE", "sourceSystemId": "CPI_ORDER_SYNC", "targetSystemId": "SALESFORCE", "protocol": "REST" },
+    { "id": "CPI_ORDER_TO_WMS", "sourceSystemId": "CPI_ORDER_SYNC", "targetSystemId": "LEGACY_WMS", "protocol": "SOAP" },
+    { "id": "CPI_ORDER_TO_PORTAL", "sourceSystemId": "CPI_ORDER_SYNC", "targetSystemId": "CUSTOMER_PORTAL", "protocol": "REST" },
+    { "id": "CPI_INVOICE_TO_PORTAL", "sourceSystemId": "CPI_INVOICE_SYNC", "targetSystemId": "FINANCE_PORTAL", "protocol": "SFTP" },
+    { "id": "ARIBA_TO_ECC", "sourceSystemId": "SAP_ARIBA", "targetSystemId": "SAP_ECC", "protocol": "REST" }
+  ]
+}
