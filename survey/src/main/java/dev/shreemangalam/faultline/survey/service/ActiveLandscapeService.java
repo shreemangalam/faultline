@@ -60,7 +60,9 @@ public class ActiveLandscapeService {
                                 integration.integrationId(),
                                 new SystemId(integration.sourceSystemId()),
                                 new SystemId(integration.targetSystemId()),
-                                integration.protocol()))
+                                integration.protocol(),
+                                integration.dataDomain(),
+                                dev.shreemangalam.faultline.survey.domain.SlaClass.fromValue(integration.slaClass())))
                         .toList());
     }
 }

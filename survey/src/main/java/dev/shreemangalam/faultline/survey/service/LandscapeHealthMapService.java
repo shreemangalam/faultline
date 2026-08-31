@@ -22,7 +22,7 @@ public class LandscapeHealthMapService {
                         .toList(),
                 landscape.integrations().stream()
                         .map(integration -> new LandscapeHealthMap.Integration(
-                                integration.id(), integration.sourceSystemId(), integration.targetSystemId(), integration.protocol()))
+                                integration.id(), integration.sourceSystemId(), integration.targetSystemId(), integration.protocol(), integration.dataDomain(), integration.slaClass()))
                         .toList());
     }
 }

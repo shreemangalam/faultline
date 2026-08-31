@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.shreemangalam.faultline.shared.domain.SystemId;
 import dev.shreemangalam.faultline.survey.domain.IntegrationEdge;
 import dev.shreemangalam.faultline.survey.domain.Landscape;
+import dev.shreemangalam.faultline.survey.domain.SlaClass;
 import dev.shreemangalam.faultline.survey.domain.SystemNode;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -36,13 +37,21 @@ public class SampleLandscapeConfiguration {
                             integration.id(),
                             new SystemId(integration.sourceSystemId()),
                             new SystemId(integration.targetSystemId()),
-                            integration.protocol())).toList());
+                            integration.protocol(),
+                            integration.dataDomain(),
+                            SlaClass.fromValue(integration.slaClass()))).toList());
         }
     }
 
     private record SampleSystem(String id, String label, int criticality) {
     }
 
-    private record SampleIntegration(String id, String sourceSystemId, String targetSystemId, String protocol) {
+    private record SampleIntegration(
+            String id,
+            String sourceSystemId,
+            String targetSystemId,
+            String protocol,
+            String dataDomain,
+            String slaClass) {
     }
 }

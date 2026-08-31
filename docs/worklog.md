@@ -20,3 +20,7 @@ This is a concise, versioned record of shipped engineering decisions. It is inte
 - Added explicit activation of an immutable, validated landscape import; all graph-reading endpoints now use the same selected topology.
 - Preserved the bundled fictional graph as a safe default and added a state-isolated HTTP test for the activation workflow.
 - Verified with the full Maven reactor: 21 tests passing.
+## 2026-08-31 — Survey metadata-rich landscape
+
+- Extended integrations with explicit data-domain and SLA metadata and expanded the fictional demo to 16 systems and 35 flows.
+- Added a reachable legacy cycle that produces a safe recovery prefix plus warning; H2/PostgreSQL-compatible Flyway migration verified by 20 shared/Survey tests.

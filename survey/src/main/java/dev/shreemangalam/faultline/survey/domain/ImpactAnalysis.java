@@ -32,13 +32,17 @@ public record ImpactAnalysis(
             SystemId sourceSystemId,
             SystemId targetSystemId,
             String protocol,
+            String dataDomain,
+            SlaClass slaClass,
             int impactRing) {
 
         public AffectedIntegration {
             Objects.requireNonNull(integrationId, "integration ID must not be null");
-            Objects.requireNonNull(sourceSystemId, "source system ID must not be null");
-            Objects.requireNonNull(targetSystemId, "target system ID must not be null");
+            Objects.requireNonNull(sourceSystemId, "integration source system ID must not be null");
+            Objects.requireNonNull(targetSystemId, "integration target system ID must not be null");
             Objects.requireNonNull(protocol, "protocol must not be null");
+            Objects.requireNonNull(dataDomain, "data domain must not be null");
+            Objects.requireNonNull(slaClass, "SLA class must not be null");
             if (impactRing < 1) {
                 throw new IllegalArgumentException("affected integration impact ring must be positive");
             }
