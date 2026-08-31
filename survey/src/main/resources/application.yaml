@@ -1,6 +1,16 @@
 spring:
   application:
     name: faultline-survey
+  datasource:
+    url: ${SURVEY_DB_URL:jdbc:postgresql://localhost:5432/faultline}
+    username: ${POSTGRES_USER:faultline}
+    password: ${POSTGRES_PASSWORD:change-me-locally}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
 
 server:
   port: 8081
