@@ -1,0 +1,32 @@
+# Local-only material: interview answers, learning notes, scratch work, recordings.
+# These never enter the public repository.
+/private/
+
+# Secrets and developer-specific configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Java / Gradle
+.gradle/
+**/build/
+**/target/
+*.class
+hs_err_pid*
+
+# Node / Next.js
+dashboard/node_modules/
+dashboard/.next/
+dashboard/out/
+dashboard/.env.local
+
+# IDE files
+.idea/
+*.iml
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db

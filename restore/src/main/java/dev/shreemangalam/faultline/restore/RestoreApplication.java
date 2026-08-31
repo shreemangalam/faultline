@@ -1,0 +1,12 @@
+package dev.shreemangalam.faultline.restore;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class RestoreApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(RestoreApplication.class, args);
+    }
+}
