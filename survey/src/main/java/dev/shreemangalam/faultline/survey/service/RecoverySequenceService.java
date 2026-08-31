@@ -1,7 +1,6 @@
 package dev.shreemangalam.faultline.survey.service;
 
 import dev.shreemangalam.faultline.shared.domain.SystemId;
-import dev.shreemangalam.faultline.survey.domain.Landscape;
 import dev.shreemangalam.faultline.survey.domain.RecoveryPlan;
 import dev.shreemangalam.faultline.survey.domain.RecoverySequencePlanner;
 import org.springframework.stereotype.Service;
@@ -10,15 +9,15 @@ import org.springframework.stereotype.Service;
 public class RecoverySequenceService {
 
     private final ImpactAnalysisService impactAnalysisService;
-    private final Landscape landscape;
+    private final ActiveLandscapeService activeLandscapeService;
     private final RecoverySequencePlanner recoverySequencePlanner = new RecoverySequencePlanner();
 
-    public RecoverySequenceService(ImpactAnalysisService impactAnalysisService, Landscape landscape) {
+    public RecoverySequenceService(ImpactAnalysisService impactAnalysisService, ActiveLandscapeService activeLandscapeService) {
         this.impactAnalysisService = impactAnalysisService;
-        this.landscape = landscape;
+        this.activeLandscapeService = activeLandscapeService;
     }
 
     public RecoveryPlan plan(SystemId failedSystemId) {
-        return recoverySequencePlanner.plan(landscape, impactAnalysisService.analyze(failedSystemId));
+        return recoverySequencePlanner.plan(activeLandscapeService.currentLandscape(), impactAnalysisService.analyze(failedSystemId));
     }
 }
