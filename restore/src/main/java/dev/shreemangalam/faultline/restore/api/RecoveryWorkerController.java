@@ -3,6 +3,7 @@ package dev.shreemangalam.faultline.restore.api;
 import dev.shreemangalam.faultline.restore.service.ClaimRecoveryEventsCommand;
 import dev.shreemangalam.faultline.restore.service.CompleteRecoveryEventCommand;
 import dev.shreemangalam.faultline.restore.service.RecoveryEventLeaseService;
+import dev.shreemangalam.faultline.restore.service.RetryRecoveryEventCommand;
 import jakarta.validation.Valid;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -33,6 +34,11 @@ public class RecoveryWorkerController {
                 .toList();
     }
 
+    @PostMapping(path = "/claims/{eventId}/retry", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public RetryRecoveryEventResponse retry(@PathVariable UUID eventId, @Valid @RequestBody RetryRecoveryEventRequest request) {
+        var result = leaseService.retry(new RetryRecoveryEventCommand(eventId, request.workerId(), request.reason()));
+        return new RetryRecoveryEventResponse(result.eventId(), result.state(), result.nextEligibleAt());
+    }
     @PostMapping(path = "/claims/{eventId}/complete", consumes = MediaType.APPLICATION_JSON_VALUE)
     public CompletedRecoveryEventResponse complete(@PathVariable UUID eventId, @Valid @RequestBody CompleteRecoveryEventRequest request) {
         var result = leaseService.complete(new CompleteRecoveryEventCommand(eventId, request.workerId()));
