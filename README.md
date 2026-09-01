@@ -13,7 +13,7 @@ It contains two linked backend modules and one operator dashboard:
 |---|---|
 | `survey` | Models the landscape as a directed graph and produces impact/recovery reports. |
 | `restore` | Performs durable, dependency-aware retry orchestration. |
-| `dashboard` | A Next.js/D3 operational view of the backend’s real data and scenarios. |
+| `dashboard` | A Next.js operational view of the backend’s real data and scenarios. |
 
 ## Status
 
@@ -33,7 +33,7 @@ The repository will contain production-style source, tests, architecture/design 
 
 ## Planned stack
 
-Java 21 or later LTS, Spring Boot, Maven, PostgreSQL, Flyway, Next.js, TypeScript, D3, Docker Compose, JUnit, Testcontainers, WireMock, and GitHub Actions.
+Java 21 or later LTS, Spring Boot, Maven, PostgreSQL, Flyway, Next.js, TypeScript, Docker Compose, JUnit, Testcontainers, WireMock, and GitHub Actions.
 
 ## Run Survey locally
 

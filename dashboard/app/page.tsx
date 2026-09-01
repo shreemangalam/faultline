@@ -77,7 +77,7 @@ export default function SurveyDashboard() {
       <div className="brand"><span className="brand-mark">F</span><span>FAULTLINE</span><span className="module-name">/ SURVEY</span></div>
       <div className="topbar-actions"><span className="environment"><i />LOCAL LANDSCAPE</span><button className="theme-toggle" type="button" onClick={() => setTheme(theme === "dark" ? "light" : "dark")} aria-label={themeLabel} title={themeLabel}>{theme === "dark" ? "☼" : "◐"}</button></div>
     </header>
-    <section className="page-heading"><div><p className="eyebrow">DEPENDENCY INTELLIGENCE</p><h1>Survey the fault line.</h1><p className="lede">Trace integration impact, classify downstream exposure, and establish a safe recovery order.</p></div><div className="landscape-state"><span className="pulse" />ACTIVE TOPOLOGY <strong>{healthMap ? "ONLINE" : "CONNECTING"}</strong></div></section>
+    <section className="page-heading"><div><p className="eyebrow">SURVEY / ACTIVE LANDSCAPE</p><h1>Integration impact analysis</h1><p className="lede">Trace downstream exposure and establish a safe recovery order from the active landscape.</p></div><div className="landscape-state"><span className="pulse" />ACTIVE TOPOLOGY <strong>{healthMap ? "ONLINE" : "CONNECTING"}</strong></div></section>
     {error && <p className="error" role="alert">{error}</p>}
     {loading && <p className="loading">Connecting to the active landscape…</p>}
     {healthMap && <>

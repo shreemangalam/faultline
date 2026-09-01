@@ -6,3 +6,5 @@
 - Upgraded Next.js to 16.3.4 to remediate its bundled PostCSS advisories. The production dependency audit is clean, and the rebuilt image still proxies the live Survey landscape.
 
 - Reworked the dashboard into a restrained operations console: persisted light/dark preference, dense incident inspector, directional D3 edges, criticality-scaled nodes, and selected-neighbourhood focus. Type checking, production build, and rebuilt live proxy verification pass.
+
+- Replaced the force-directed graph with a stable four-lane SVG topology board. It keeps all systems readable, uses directed curved paths, shows criticality on each system card, and preserves context while highlighting the selected neighbourhood. Removed unused D3 packages; build and production audit remain clean.

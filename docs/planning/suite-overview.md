@@ -37,11 +37,11 @@ Next.js browser dashboard                 Swagger / OpenAPI
 The dashboard is a real **Next.js + TypeScript** application, not a static mockup. It has four focused views:
 
 - **Operations overview:** incident count, active alerts, queue depth, processing rate, retry success rate, and per-target circuit state.
-- **Landscape health map:** an interactive D3 force-directed graph of the sample SAP integration estate and its current status.
+- **Landscape health map:** an interactive lane-based topology board of the sample SAP integration estate and its current status.
 - **Impact report:** affected systems and iFlows, impact classification, score, cycle warnings, and a recommended restoration sequence.
 - **Recovery console:** circuit-breaker state, queue depth, event status counts, processing timeline, and scenario controls.
 
-The D3 graph is purposeful: its nodes and edges are the exact data structures returned by Survey, so a viewer can see the graph, select a failing node, and immediately understand why the impact report changes. D3 will be confined to graph layout and interaction; ordinary cards, tables, filters, and status displays remain conventional React components.
+The topology board is purposeful: its systems and directed paths are the exact data structures returned by Survey, so a viewer can select a failing node and immediately understand why the impact report changes. A structured SVG layout is used because the sample estate is compact, cyclic, and benefits more from stable operational lanes than force simulation; ordinary cards, tables, filters, and status displays remain conventional React components.
 
 The primary deliverable is a working local demo; not a paid cloud deployment. The public repository will include a short screen recording/GIF, representative screenshots, API examples, seeded data, automated test results, and architecture documents so a reviewer can assess it without running it.
 
@@ -91,7 +91,7 @@ faultline/
   survey/                  Java/Spring Boot graph-analysis service
   restore/                 Java/Spring Boot recovery-orchestration service
   shared/                  intentionally small Java contracts/value objects
-  dashboard/               Next.js + TypeScript + D3 operator UI
+  dashboard/               Next.js + TypeScript operator UI
   infra/                   Docker Compose and local configuration
   docs/                    designs, ADRs, API examples, learning notes
   test-data/               fictional enterprise landscape and scenarios
@@ -105,7 +105,7 @@ faultline/
 | Spring Boot 3 | Backend APIs and workers | Production conventions for REST, validation, configuration, metrics, HTTP clients, and dependency injection. |
 | PostgreSQL + Flyway | Durable state | Reliable relational modelling, transactions, locking, and reproducible schema history. |
 | Next.js + TypeScript | Dashboard | Component-based UI with type-safe API consumption and a conventional React portfolio signal. |
-| D3.js | Landscape explorer only | Renders and interacts with the graph data that is central to the product. |
+| Structured SVG | Landscape explorer only | Renders and interacts with the graph data using stable operational lanes. |
 | Server-Sent Events | Live dashboard updates | A simple one-way server-to-browser channel for retry/circuit state without introducing unnecessary WebSocket complexity. |
 | Docker Compose | Local runtime | One reproducible free command starts the whole demonstration. |
 | JUnit, Testcontainers, WireMock | Verification | Separates algorithm tests from realistic database and downstream-system tests. |
@@ -155,7 +155,7 @@ This is a learning-first plan. A phase ends only when its code, test evidence, d
 | 1. Platform foundation | Maven modules, Spring Boot skeletons, PostgreSQL, Flyway, Docker Compose, CI, health endpoints. | Dependency management, configuration, migrations, containers, CI. | 1–2 days |
 | 2. Survey core | Graph model, import validation, BFS impact analysis, cycle detection, unit tests. | Directed graphs, adjacency lists, BFS, defensive input handling. | 2–3 days |
 | 3. Survey product slice | Impact scoring, Kahn recovery sequence, persisted reports, OpenAPI, sample landscape. | Topological sort, scoring trade-offs, API and persistence design. | 1–2 days |
-| 4. Dashboard and demo | Next.js shell, D3 landscape explorer, impact report UX, API client, screenshots. | React components, TypeScript contracts, D3 lifecycle, accessible data visualisation. | 2–3 days |
+| 4. Dashboard and demo | Next.js shell, structured landscape explorer, impact report UX, API client, screenshots. | React components, TypeScript contracts, accessible data visualisation, and interaction design. | 2–3 days |
 | 5. Restore core | Event state machine, dependencies, durable scheduler, attempt audit, downstream simulator. | State machines, transactions, scheduling, idempotency boundaries. | 2–3 days |
 | 6. Resilience behaviour | Circuit breaker, backoff with jitter, deterministic prioritisation, concurrency tests. | Failure modes, retry storms, locking, ranking and invariants. | 2–3 days |
 | 7. Integration and live UI | SSE updates, scenario controls, metrics/statistics, full workflow from outage to recovery. | Event-driven UI, observability, service integration. | 1–2 days |
@@ -163,7 +163,7 @@ This is a learning-first plan. A phase ends only when its code, test evidence, d
 
 At 2–3 focused hours per day, this is approximately **3–4 weeks**. An intensive build can produce the functional suite in about two weeks, but the final review and learning sessions are important enough that they should not be compressed away.
 
-The first visible milestone lands early: after Phases 1–4, Survey is already a complete, polished project with a real D3 frontend. Restore then becomes the second project/case study while still benefiting from shared product context.
+The first visible milestone lands early: after Phases 1–4, Survey is already a complete, polished project with a real interactive frontend. Restore then becomes the second project/case study while still benefiting from shared product context.
 
 ## 10. Two-project resume packaging
 
@@ -171,7 +171,7 @@ One GitHub repository is a sensible engineering choice; two self-contained case 
 
 | Resume project | Focus | Evidence to link/show |
 |---|---|---|
-| **Faultline Survey — Integration Landscape Impact Analyzer** | Graph algorithms, SAP-CPI domain modelling, REST API design, D3 visualisation. | Impact-demo GIF, graph screen, sample report, algorithm tests. |
+| **Faultline Survey — Integration Landscape Impact Analyzer** | Graph algorithms, SAP-CPI domain modelling, REST API design, interactive topology visualisation. | Impact-demo GIF, graph screen, sample report, algorithm tests. |
 | **Faultline Restore — Dependency-Aware Event Recovery Orchestrator** | Durable event processing, database concurrency, circuit breaker, backoff/jitter, operational metrics. | Thundering-herd video, state timeline, circuit view, integration tests. |
 
 Each case study will state that it is part of Faultline and link to its module. This is transparent: it presents two substantial problem domains without pretending that one codebase is two unrelated repositories.

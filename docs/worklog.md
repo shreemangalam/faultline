@@ -38,3 +38,5 @@ This is a concise, versioned record of shipped engineering decisions. It is inte
 - Upgraded the dashboard to Next.js 16.3.4 after npm reported PostCSS advisories; type checking, production build, rebuilt container proxy, and the production dependency audit pass with zero vulnerabilities.
 
 - Reworked the Survey UI into a dark-first operations console with a persisted light-mode choice and a directional D3 topology that focuses the selected dependency neighbourhood; production build and live proxy verification pass.
+
+- Replaced the Survey force graph with a structured four-lane topology board and removed unused D3 packages. The dashboard production build and zero-vulnerability audit pass.

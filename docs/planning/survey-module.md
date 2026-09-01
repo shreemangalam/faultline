@@ -93,11 +93,11 @@ The exact schema will be versioned in OpenAPI before the implementation is consi
 
 ## Frontend experience and API contract
 
-Survey exposes a purpose-built health-map response for the Next.js dashboard. It returns node IDs, labels, health, criticality, and edge metadata—data that D3 uses directly to place and colour the landscape graph. It must not expose a database entity shape just because that is convenient for Java.
+Survey exposes a purpose-built health-map response for the Next.js dashboard. It returns node IDs, labels, health, criticality, and edge metadata—data that the topology board uses directly to render and focus the landscape graph. It must not expose a database entity shape just because that is convenient for Java.
 
 The user journey is deliberate:
 
-1. The operator selects a failed system in the D3 graph or chooses a preset outage.
+1. The operator selects a failed system in the topology board or chooses a preset outage.
 2. The dashboard posts an incident declaration to Survey.
 3. Survey stores and returns the report ID.
 4. The report page presents impact rings, score explanation, cycle warnings, and recovery order beside the highlighted graph path.
@@ -112,7 +112,7 @@ This introduces a useful frontend/backend boundary: the Java backend owns graph 
 | Algorithm design | Adjacency list, BFS, visited sets, Kahn’s algorithm | Explain the time/space trade-off and prove cycles do not break analysis. |
 | API design | Spring MVC, DTOs, Bean Validation, OpenAPI | Separate public contracts from persistence and produce useful client errors. |
 | Data modelling | PostgreSQL, JPA, Flyway | Model nodes, edges, reports, and health snapshots with controlled migrations. |
-| Visualisation | Next.js, TypeScript, D3 force layout | Render a meaningful graph, clean up D3 effects correctly, and support selection/keyboard-readable alternatives. |
+| Visualisation | Next.js, TypeScript, structured SVG layout | Render a meaningful graph with stable operational lanes and support selection/keyboard-readable alternatives. |
 | Testing | JUnit, Testcontainers, Playwright later | Test algorithms, APIs, database mappings, and the graph/report user journey. |
 
 ## System-design boundaries
