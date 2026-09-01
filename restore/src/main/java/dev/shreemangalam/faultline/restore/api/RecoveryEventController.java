@@ -31,7 +31,10 @@ public class RecoveryEventController {
 
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<RecoveryEventResponse> submit(@Valid @RequestBody CreateRecoveryEventRequest request) {
-        var result = recoveryEventService.submit(new CreateRecoveryEventCommand(request.idempotencyKey(), request.correlationId(), request.targetSystem(), request.payloadReference(), request.priority(), request.deadlineAt()));
+        var command = new CreateRecoveryEventCommand(
+                request.idempotencyKey(), request.correlationId(), request.targetSystem(), request.payloadReference(),
+                request.priority(), request.deadlineAt(), request.prerequisiteEventIds());
+        var result = recoveryEventService.submit(command);
         RecoveryEventResponse response = toResponse(result.details());
         if (!result.created()) return ResponseEntity.ok(response);
         return ResponseEntity.created(URI.create("/api/v1/events/" + response.eventId())).body(response);
@@ -49,6 +52,11 @@ public class RecoveryEventController {
 
     private RecoveryEventResponse toResponse(RecoveryEventDetails details) {
         var event = details.event();
-        return new RecoveryEventResponse(event.getId(), event.getIdempotencyKey(), event.getCorrelationId(), event.getTargetSystem(), event.getPayloadReference(), event.getPriority(), event.getDeadlineAt(), event.getState(), event.getAttemptCount(), event.getNextEligibleAt(), event.getCreatedAt(), details.audits().stream().map(audit -> new RecoveryEventAuditResponse(audit.getId(), audit.getToState(), audit.getReason(), audit.getOccurredAt())).toList());
+        return new RecoveryEventResponse(
+                event.getId(), event.getIdempotencyKey(), event.getCorrelationId(), event.getTargetSystem(),
+                event.getPayloadReference(), event.getPriority(), event.getDeadlineAt(), event.getState(),
+                event.getAttemptCount(), event.getNextEligibleAt(), event.getCreatedAt(), details.prerequisiteEventIds(),
+                details.audits().stream().map(audit -> new RecoveryEventAuditResponse(
+                        audit.getId(), audit.getToState(), audit.getReason(), audit.getOccurredAt())).toList());
     }
 }
