@@ -21,6 +21,7 @@ public record RecoveryEventResponse(
         Instant leaseExpiresAt,
         Instant createdAt,
         List<UUID> prerequisiteEventIds,
-        List<RecoveryEventAuditResponse> audits
+        List<RecoveryEventAuditResponse> audits,
+        List<RecoveryAttemptResponse> attempts
 ) {
 }

@@ -29,6 +29,7 @@ class RetryRecoveryEventTest {
 
     @BeforeEach
     void clear() {
+        jdbcTemplate.update("DELETE FROM restore_event_attempt");
         jdbcTemplate.update("DELETE FROM restore_event_audit");
         jdbcTemplate.update("DELETE FROM restore_event_dependency");
         jdbcTemplate.update("DELETE FROM restore_event");
@@ -53,7 +54,11 @@ class RetryRecoveryEventTest {
         mockMvc.perform(get("/api/v1/events/{eventId}", eventId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.state").value("EXHAUSTED"))
-                .andExpect(jsonPath("$.attemptCount").value(3));
+                .andExpect(jsonPath("$.attemptCount").value(3))
+                .andExpect(jsonPath("$.attempts.length()").value(3))
+                .andExpect(jsonPath("$.attempts[0].outcome").value("TRANSIENT_FAILURE"))
+                .andExpect(jsonPath("$.attempts[1].outcome").value("TRANSIENT_FAILURE"))
+                .andExpect(jsonPath("$.attempts[2].outcome").value("EXHAUSTED"));
         mockMvc.perform(get("/api/v1/circuit-breakers"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].state").value("OPEN"))

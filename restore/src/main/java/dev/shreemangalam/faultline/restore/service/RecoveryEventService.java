@@ -1,6 +1,7 @@
 package dev.shreemangalam.faultline.restore.service;
 
 import dev.shreemangalam.faultline.restore.domain.RecoveryEventState;
+import dev.shreemangalam.faultline.restore.persistence.RecoveryAttemptRepository;
 import dev.shreemangalam.faultline.restore.persistence.RecoveryEventAuditEntity;
 import dev.shreemangalam.faultline.restore.persistence.RecoveryEventAuditRepository;
 import dev.shreemangalam.faultline.restore.persistence.RecoveryEventDependencyEntity;
@@ -30,13 +31,15 @@ public class RecoveryEventService {
     private final RecoveryEventRepository eventRepository;
     private final RecoveryEventAuditRepository auditRepository;
     private final RecoveryEventDependencyRepository dependencyRepository;
+    private final RecoveryAttemptRepository attemptRepository;
     private final Clock clock;
     private final CircuitBreakerService circuitBreakerService;
 
-    public RecoveryEventService(RecoveryEventRepository eventRepository, RecoveryEventAuditRepository auditRepository, RecoveryEventDependencyRepository dependencyRepository, Clock clock, CircuitBreakerService circuitBreakerService) {
+    public RecoveryEventService(RecoveryEventRepository eventRepository, RecoveryEventAuditRepository auditRepository, RecoveryEventDependencyRepository dependencyRepository, RecoveryAttemptRepository attemptRepository, Clock clock, CircuitBreakerService circuitBreakerService) {
         this.eventRepository = eventRepository;
         this.auditRepository = auditRepository;
         this.dependencyRepository = dependencyRepository;
+        this.attemptRepository = attemptRepository;
         this.clock = clock;
         this.circuitBreakerService = circuitBreakerService;
     }
@@ -103,7 +106,8 @@ public class RecoveryEventService {
         List<UUID> prerequisiteEventIds = dependencyRepository.findByEventIdOrderByPrerequisiteEventIdAsc(event.getId()).stream()
                 .map(RecoveryEventDependencyEntity::getPrerequisiteEventId)
                 .toList();
-        return new RecoveryEventDetails(event, auditRepository.findByEventIdOrderByOccurredAtAsc(event.getId()), prerequisiteEventIds);
+        return new RecoveryEventDetails(event, auditRepository.findByEventIdOrderByOccurredAtAsc(event.getId()),
+                attemptRepository.findByEventIdOrderByAttemptNumberAsc(event.getId()), prerequisiteEventIds);
     }
 
     private String fingerprint(CreateRecoveryEventCommand command) {

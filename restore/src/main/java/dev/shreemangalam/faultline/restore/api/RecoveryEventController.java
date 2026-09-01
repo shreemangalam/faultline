@@ -57,6 +57,9 @@ public class RecoveryEventController {
                 event.getPayloadReference(), event.getPriority(), event.getDeadlineAt(), event.getState(),
                 event.getAttemptCount(), event.getNextEligibleAt(), event.getLeaseOwner(), event.getLeaseExpiresAt(), event.getCreatedAt(), details.prerequisiteEventIds(),
                 details.audits().stream().map(audit -> new RecoveryEventAuditResponse(
-                        audit.getId(), audit.getToState(), audit.getReason(), audit.getOccurredAt())).toList());
+                        audit.getId(), audit.getToState(), audit.getReason(), audit.getOccurredAt())).toList(),
+                details.attempts().stream().map(attempt -> new RecoveryAttemptResponse(
+                        attempt.getId(), attempt.getAttemptNumber(), attempt.getWorkerId(), attempt.getOutcome(),
+                        attempt.getFailureReason(), attempt.getStartedAt(), attempt.getFinishedAt())).toList());
     }
 }

@@ -8,4 +8,5 @@
 - Added lease-owner-guarded completion. Completing a prerequisite transactionally releases only dependants whose full prerequisite set is complete.
 - Added bounded retry scheduling and poison-event exhaustion after three attempts.
 - Added persisted target circuits with open-circuit claim suppression, a single half-open probe, and success reset.
-- Restore uses its own Flyway history table in the shared demo database; jitter, failure classification, attempt details, and the downstream simulator remain next.
+- Added queryable, numbered attempt history. A reclaimed lease closes the abandoned attempt as `LEASE_EXPIRED`; completion and retry paths record their terminal outcomes transactionally with event state.
+- Restore uses its own Flyway history table in the shared demo database; jitter, failure classification, aggregate statistics, and the downstream simulator remain next.

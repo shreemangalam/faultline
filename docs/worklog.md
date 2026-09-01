@@ -52,3 +52,4 @@ This is a concise, versioned record of shipped engineering decisions. It is inte
 - Added bounded transient retry scheduling and `EXHAUSTED` poison-event handling after three attempts.
 - Added persisted three-state target circuits. Open targets are excluded from claims; cooldown admits one half-open probe; success closes the circuit.
 - Verified 11 focused Restore tests, the full Maven reactor, Docker migration startup, and a live PostgreSQL claim/failure/circuit-read round-trip.
+- Added durable, numbered attempt history for claims, successful completions, transient failures, exhausted retries, and expired worker leases.
