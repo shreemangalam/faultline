@@ -46,4 +46,5 @@ This is a concise, versioned record of shipped engineering decisions. It is inte
 - Added persisted recovery events, lifecycle audit records, idempotent submit/retrieve APIs, isolated Flyway history, and the Restore Compose service.
 - Added persisted prerequisites: incomplete same-correlation dependencies make a child BLOCKED and participate in idempotency; a later worker slice will release it.
 - Added transactional worker claims with persisted visibility leases and expired-lease recovery via `FOR UPDATE SKIP LOCKED`.
-- Verified eight focused Restore tests, the full Maven reactor, and a live PostgreSQL worker-lease expiry/reclaim round-trip.
+- Added owner-guarded completion and atomic dependency release after every prerequisite completes.
+- Verified ten focused Restore tests and the full Maven reactor; the rebuilt PostgreSQL container starts with the completion API.

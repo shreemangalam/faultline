@@ -3,14 +3,19 @@ package dev.shreemangalam.faultline.restore.service;
 import dev.shreemangalam.faultline.restore.domain.RecoveryEventState;
 import dev.shreemangalam.faultline.restore.persistence.RecoveryEventAuditEntity;
 import dev.shreemangalam.faultline.restore.persistence.RecoveryEventAuditRepository;
+import dev.shreemangalam.faultline.restore.persistence.RecoveryEventDependencyEntity;
+import dev.shreemangalam.faultline.restore.persistence.RecoveryEventDependencyRepository;
 import dev.shreemangalam.faultline.restore.persistence.RecoveryEventEntity;
 import dev.shreemangalam.faultline.restore.persistence.RecoveryEventRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 @Service
@@ -18,11 +23,13 @@ public class RecoveryEventLeaseService {
 
     private final RecoveryEventRepository eventRepository;
     private final RecoveryEventAuditRepository auditRepository;
+    private final RecoveryEventDependencyRepository dependencyRepository;
     private final Clock clock;
 
-    public RecoveryEventLeaseService(RecoveryEventRepository eventRepository, RecoveryEventAuditRepository auditRepository, Clock clock) {
+    public RecoveryEventLeaseService(RecoveryEventRepository eventRepository, RecoveryEventAuditRepository auditRepository, RecoveryEventDependencyRepository dependencyRepository, Clock clock) {
         this.eventRepository = eventRepository;
         this.auditRepository = auditRepository;
+        this.dependencyRepository = dependencyRepository;
         this.clock = clock;
     }
 
@@ -43,5 +50,44 @@ public class RecoveryEventLeaseService {
         return events.stream().map(event -> new ClaimedRecoveryEvent(
                 event.getId(), event.getCorrelationId(), event.getTargetSystem(), event.getPayloadReference(),
                 event.getPriority(), event.getAttemptCount(), event.getLeaseOwner(), event.getLeaseExpiresAt())).toList();
+    }
+
+    @Transactional
+    public CompletedRecoveryEvent complete(CompleteRecoveryEventCommand command) {
+        Instant now = clock.instant();
+        RecoveryEventEntity event = eventRepository.lockById(command.eventId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Recovery event was not found."));
+        if (event.getState() != RecoveryEventState.IN_PROGRESS || !Objects.equals(event.getLeaseOwner(), command.workerId())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Recovery event is not leased by this worker.");
+        }
+        if (event.getLeaseExpiresAt() == null || !event.getLeaseExpiresAt().isAfter(now)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Recovery event lease has expired.");
+        }
+        event.complete(now);
+        auditRepository.save(new RecoveryEventAuditEntity(UUID.randomUUID(), event.getId(), RecoveryEventState.COMPLETED, "Completed by worker " + command.workerId() + ".", now));
+
+        List<UUID> releasedEventIds = dependencyRepository.findByPrerequisiteEventIdOrderByEventIdAsc(event.getId()).stream()
+                .map(RecoveryEventDependencyEntity::getEventId)
+                .distinct()
+                .flatMap(dependentEventId -> releaseIfUnblocked(dependentEventId, now).stream())
+                .toList();
+        return new CompletedRecoveryEvent(event.getId(), releasedEventIds);
+    }
+
+    private List<UUID> releaseIfUnblocked(UUID eventId, Instant now) {
+        RecoveryEventEntity dependent = eventRepository.lockById(eventId).orElseThrow();
+        if (dependent.getState() != RecoveryEventState.BLOCKED || !allPrerequisitesComplete(eventId)) {
+            return List.of();
+        }
+        dependent.release(now);
+        auditRepository.save(new RecoveryEventAuditEntity(UUID.randomUUID(), eventId, RecoveryEventState.ELIGIBLE, "All prerequisites completed.", now));
+        return List.of(eventId);
+    }
+
+    private boolean allPrerequisitesComplete(UUID eventId) {
+        List<RecoveryEventDependencyEntity> dependencies = dependencyRepository.findByEventIdOrderByPrerequisiteEventIdAsc(eventId);
+        return !dependencies.isEmpty() && dependencies.stream().allMatch(dependency -> eventRepository.findById(dependency.getPrerequisiteEventId())
+                .map(event -> event.getState() == RecoveryEventState.COMPLETED)
+                .orElse(false));
     }
 }

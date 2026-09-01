@@ -7,4 +7,5 @@ import java.util.UUID;
 
 public interface RecoveryEventDependencyRepository extends JpaRepository<RecoveryEventDependencyEntity, UUID> {
     List<RecoveryEventDependencyEntity> findByEventIdOrderByPrerequisiteEventIdAsc(UUID eventId);
+    List<RecoveryEventDependencyEntity> findByPrerequisiteEventIdOrderByEventIdAsc(UUID prerequisiteEventId);
 }
