@@ -17,6 +17,8 @@ public record RecoveryEventResponse(
         RecoveryEventState state,
         int attemptCount,
         Instant nextEligibleAt,
+        String leaseOwner,
+        Instant leaseExpiresAt,
         Instant createdAt,
         List<UUID> prerequisiteEventIds,
         List<RecoveryEventAuditResponse> audits
