@@ -40,3 +40,7 @@ This is a concise, versioned record of shipped engineering decisions. It is inte
 - Reworked the Survey UI into a dark-first operations console with a persisted light-mode choice and a directional D3 topology that focuses the selected dependency neighbourhood; production build and live proxy verification pass.
 
 - Replaced the Survey force graph with a structured four-lane topology board and removed unused D3 packages. The dashboard production build and zero-vulnerability audit pass.
+
+## 2026-09-01 — Restore durable event foundation
+
+- Added persisted recovery events, lifecycle audit records, idempotent submit/retrieve APIs, isolated Flyway history, and the Restore Compose service. Four focused tests and a live PostgreSQL event round-trip pass.

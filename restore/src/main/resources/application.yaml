@@ -1,6 +1,19 @@
 spring:
   application:
     name: faultline-restore
+  datasource:
+    url: ${RESTORE_DB_URL:jdbc:postgresql://localhost:5432/faultline}
+    username: ${POSTGRES_USER:faultline}
+    password: ${POSTGRES_PASSWORD:change-me-locally}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+    table: restore_flyway_schema_history
+    baseline-on-migrate: true
+    baseline-version: 0
 
 server:
   port: 8082
