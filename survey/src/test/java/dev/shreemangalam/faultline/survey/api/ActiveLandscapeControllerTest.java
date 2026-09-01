@@ -74,7 +74,7 @@ class ActiveLandscapeControllerTest {
                         .content("""
                                 {"systemId":"SOURCE","degradationType":"COMPLETE_OUTAGE"}
                                 """))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.affectedSystems[0].systemId").value("TARGET"));
     }
 
