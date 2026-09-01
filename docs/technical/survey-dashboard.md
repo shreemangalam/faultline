@@ -11,3 +11,4 @@ docker compose -f infra/compose.yaml up --build
 ```
 
 Open `http://localhost:3000`; Survey is available on `http://localhost:8081`. For frontend-only development, run `npm run dev` in `dashboard/` with Survey already running.
+The interface uses a dark-first operations-console treatment with a persisted light-mode choice. The D3 map renders directed paths, sizes nodes by criticality, and highlights the selected system's immediate dependency neighbourhood so an operator can read the relevant route without losing the wider landscape.

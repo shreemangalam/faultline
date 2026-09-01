@@ -36,3 +36,5 @@ This is a concise, versioned record of shipped engineering decisions. It is inte
 - Added a functional Next.js/TypeScript/D3 dashboard and a three-service Compose topology for PostgreSQL, Survey, and the browser UI.
 - Verified frontend type checking and production build, plus the live Compose stack: Survey health is UP; PostgreSQL persists and retrieves impact reports; the dashboard and its internal proxy return 200 with 16 systems and 35 integrations.
 - Upgraded the dashboard to Next.js 16.3.4 after npm reported PostCSS advisories; type checking, production build, rebuilt container proxy, and the production dependency audit pass with zero vulnerabilities.
+
+- Reworked the Survey UI into a dark-first operations console with a persisted light-mode choice and a directional D3 topology that focuses the selected dependency neighbourhood; production build and live proxy verification pass.
