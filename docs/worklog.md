@@ -48,3 +48,5 @@ This is a concise, versioned record of shipped engineering decisions. It is inte
 - Added transactional worker claims with persisted visibility leases and expired-lease recovery via `FOR UPDATE SKIP LOCKED`.
 - Added owner-guarded completion and atomic dependency release after every prerequisite completes.
 - Verified ten focused Restore tests and the full Maven reactor; the rebuilt PostgreSQL container starts with the completion API.
+
+- Added bounded transient retry scheduling and `EXHAUSTED` poison-event handling after three attempts.

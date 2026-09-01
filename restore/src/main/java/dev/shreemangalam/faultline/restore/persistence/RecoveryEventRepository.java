@@ -22,7 +22,7 @@ public interface RecoveryEventRepository extends JpaRepository<RecoveryEventEnti
 
     @Query(value = """
             SELECT * FROM restore_event
-            WHERE (state = 'ELIGIBLE' AND next_eligible_at <= :now)
+            WHERE (state IN ('ELIGIBLE', 'RETRY_SCHEDULED') AND next_eligible_at <= :now)
                OR (state = 'IN_PROGRESS' AND lease_expires_at IS NOT NULL AND lease_expires_at <= :now)
             ORDER BY priority ASC, deadline_at ASC NULLS LAST, attempt_count ASC, created_at ASC, id ASC
             LIMIT :batchSize

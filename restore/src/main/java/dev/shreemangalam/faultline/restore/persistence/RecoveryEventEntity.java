@@ -69,13 +69,34 @@ public class RecoveryEventEntity {
     }
 
     public void claim(String workerId, Instant expiresAt, Instant now) {
-        if (state != RecoveryEventState.ELIGIBLE && state != RecoveryEventState.IN_PROGRESS) {
+        if (state != RecoveryEventState.ELIGIBLE && state != RecoveryEventState.IN_PROGRESS && state != RecoveryEventState.RETRY_SCHEDULED) {
             throw new IllegalStateException("Only eligible or leased events can be claimed.");
         }
         state = RecoveryEventState.IN_PROGRESS;
         leaseOwner = workerId;
         leaseExpiresAt = expiresAt;
         attemptCount++;
+        updatedAt = now;
+    }
+
+    public void scheduleRetry(Instant nextAttemptAt, Instant now) {
+        if (state != RecoveryEventState.IN_PROGRESS) {
+            throw new IllegalStateException("Only leased events can be scheduled for retry.");
+        }
+        state = RecoveryEventState.RETRY_SCHEDULED;
+        nextEligibleAt = nextAttemptAt;
+        leaseOwner = null;
+        leaseExpiresAt = null;
+        updatedAt = now;
+    }
+
+    public void exhaust(Instant now) {
+        if (state != RecoveryEventState.IN_PROGRESS) {
+            throw new IllegalStateException("Only leased events can be exhausted.");
+        }
+        state = RecoveryEventState.EXHAUSTED;
+        leaseOwner = null;
+        leaseExpiresAt = null;
         updatedAt = now;
     }
 
