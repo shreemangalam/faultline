@@ -25,19 +25,23 @@ public class RecoveryEventLeaseService {
     private final RecoveryEventAuditRepository auditRepository;
     private final RecoveryEventDependencyRepository dependencyRepository;
     private final Clock clock;
+    private final CircuitBreakerService circuitBreakerService;
 
-    public RecoveryEventLeaseService(RecoveryEventRepository eventRepository, RecoveryEventAuditRepository auditRepository, RecoveryEventDependencyRepository dependencyRepository, Clock clock) {
+    public RecoveryEventLeaseService(RecoveryEventRepository eventRepository, RecoveryEventAuditRepository auditRepository, RecoveryEventDependencyRepository dependencyRepository, Clock clock, CircuitBreakerService circuitBreakerService) {
         this.eventRepository = eventRepository;
         this.auditRepository = auditRepository;
         this.dependencyRepository = dependencyRepository;
         this.clock = clock;
+        this.circuitBreakerService = circuitBreakerService;
     }
 
     @Transactional
     public List<ClaimedRecoveryEvent> claim(ClaimRecoveryEventsCommand command) {
         Instant now = clock.instant();
         Instant leaseExpiresAt = now.plusSeconds(command.leaseSeconds());
-        List<RecoveryEventEntity> events = eventRepository.lockClaimable(now, command.maxEvents());
+        List<RecoveryEventEntity> events = eventRepository.lockClaimable(now, command.maxEvents()).stream()
+                .filter(event -> circuitBreakerService.allowClaim(event.getTargetSystem(), now))
+                .toList();
         List<RecoveryEventAuditEntity> audits = events.stream().map(event -> {
             boolean reclaimed = event.getState() == RecoveryEventState.IN_PROGRESS;
             boolean retryDue = event.getState() == RecoveryEventState.RETRY_SCHEDULED;
@@ -55,6 +59,7 @@ public class RecoveryEventLeaseService {
     public RetryRecoveryEvent retry(RetryRecoveryEventCommand command) {
         Instant now = clock.instant();
         RecoveryEventEntity event = ownedLease(command.eventId(), command.workerId(), now);
+        circuitBreakerService.recordFailure(event.getTargetSystem(), now);
         if (event.getAttemptCount() >= 3) {
             event.exhaust(now);
             auditRepository.save(new RecoveryEventAuditEntity(UUID.randomUUID(), event.getId(), RecoveryEventState.EXHAUSTED, "Retry limit reached: " + command.reason(), now));
@@ -70,6 +75,7 @@ public class RecoveryEventLeaseService {
     public CompletedRecoveryEvent complete(CompleteRecoveryEventCommand command) {
         Instant now = clock.instant();
         RecoveryEventEntity event = ownedLease(command.eventId(), command.workerId(), now);
+        circuitBreakerService.recordSuccess(event.getTargetSystem(), now);
         event.complete(now);
         auditRepository.save(new RecoveryEventAuditEntity(UUID.randomUUID(), event.getId(), RecoveryEventState.COMPLETED, "Completed by worker " + command.workerId() + ".", now));
         List<UUID> releasedEventIds = dependencyRepository.findByPrerequisiteEventIdOrderByEventIdAsc(event.getId()).stream().map(RecoveryEventDependencyEntity::getEventId).distinct().flatMap(id -> releaseIfUnblocked(id, now).stream()).toList();

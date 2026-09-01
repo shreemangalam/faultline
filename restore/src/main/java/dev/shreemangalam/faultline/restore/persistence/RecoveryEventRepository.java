@@ -21,10 +21,16 @@ public interface RecoveryEventRepository extends JpaRepository<RecoveryEventEnti
     Optional<RecoveryEventEntity> lockById(@Param("eventId") UUID eventId);
 
     @Query(value = """
-            SELECT * FROM restore_event
-            WHERE (state IN ('ELIGIBLE', 'RETRY_SCHEDULED') AND next_eligible_at <= :now)
-               OR (state = 'IN_PROGRESS' AND lease_expires_at IS NOT NULL AND lease_expires_at <= :now)
-            ORDER BY priority ASC, deadline_at ASC NULLS LAST, attempt_count ASC, created_at ASC, id ASC
+            SELECT event.* FROM restore_event event
+            WHERE ((event.state IN ('ELIGIBLE', 'RETRY_SCHEDULED') AND event.next_eligible_at <= :now)
+               OR (event.state = 'IN_PROGRESS' AND event.lease_expires_at IS NOT NULL AND event.lease_expires_at <= :now))
+              AND NOT EXISTS (
+                  SELECT 1 FROM restore_circuit_breaker circuit
+                  WHERE circuit.target_system = event.target_system
+                    AND (circuit.state = 'HALF_OPEN'
+                         OR (circuit.state = 'OPEN' AND circuit.open_until > :now))
+              )
+            ORDER BY event.priority ASC, event.deadline_at ASC NULLS LAST, event.attempt_count ASC, event.created_at ASC, event.id ASC
             LIMIT :batchSize
             FOR UPDATE SKIP LOCKED
             """, nativeQuery = true)

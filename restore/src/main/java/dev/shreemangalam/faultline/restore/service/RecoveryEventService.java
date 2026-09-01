@@ -31,12 +31,14 @@ public class RecoveryEventService {
     private final RecoveryEventAuditRepository auditRepository;
     private final RecoveryEventDependencyRepository dependencyRepository;
     private final Clock clock;
+    private final CircuitBreakerService circuitBreakerService;
 
-    public RecoveryEventService(RecoveryEventRepository eventRepository, RecoveryEventAuditRepository auditRepository, RecoveryEventDependencyRepository dependencyRepository, Clock clock) {
+    public RecoveryEventService(RecoveryEventRepository eventRepository, RecoveryEventAuditRepository auditRepository, RecoveryEventDependencyRepository dependencyRepository, Clock clock, CircuitBreakerService circuitBreakerService) {
         this.eventRepository = eventRepository;
         this.auditRepository = auditRepository;
         this.dependencyRepository = dependencyRepository;
         this.clock = clock;
+        this.circuitBreakerService = circuitBreakerService;
     }
 
     public Submission submit(CreateRecoveryEventCommand command) {
@@ -51,6 +53,7 @@ public class RecoveryEventService {
 
         List<RecoveryEventEntity> prerequisites = prerequisites(command);
         Instant now = clock.instant();
+        circuitBreakerService.ensureExists(command.targetSystem(), now);
         boolean prerequisitesComplete = prerequisites.stream().allMatch(event -> event.getState() == RecoveryEventState.COMPLETED);
         RecoveryEventState initialState = prerequisitesComplete ? RecoveryEventState.ELIGIBLE : RecoveryEventState.BLOCKED;
         RecoveryEventEntity event = RecoveryEventEntity.receive(
