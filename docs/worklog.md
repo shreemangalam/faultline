@@ -24,3 +24,7 @@ This is a concise, versioned record of shipped engineering decisions. It is inte
 
 - Extended integrations with explicit data-domain and SLA metadata and expanded the fictional demo to 16 systems and 35 flows.
 - Added a reachable legacy cycle that produces a safe recovery prefix plus warning; H2/PostgreSQL-compatible Flyway migration verified by 20 shared/Survey tests.
+## 2026-09-01 — Survey persisted impact reports
+
+- Made `POST /api/v1/analysis/impact` create a timestamped immutable incident report and added retrieval by report ID.
+- The snapshot contains classification, ranked priorities, recovery output, warnings, and a stable landscape reference; 21 shared/Survey tests verify the workflow and classification rules.
