@@ -27,6 +27,18 @@ services:
         condition: service_healthy
     ports: ["8081:8081"]
 
+  restore:
+    build:
+      context: ..
+      dockerfile: restore/Dockerfile
+    environment:
+      RESTORE_DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-faultline}
+      POSTGRES_USER: ${POSTGRES_USER:-faultline}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me-locally}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports: ["8082:8082"]
   dashboard:
     build:
       context: ..
