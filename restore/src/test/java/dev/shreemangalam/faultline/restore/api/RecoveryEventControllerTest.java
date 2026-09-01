@@ -37,6 +37,7 @@ class RecoveryEventControllerTest {
                 .andExpect(header().string("Location", org.hamcrest.Matchers.containsString("/api/v1/events/")))
                 .andExpect(jsonPath("$.state").value("ELIGIBLE"))
                 .andExpect(jsonPath("$.attemptCount").value(0))
+                .andExpect(jsonPath("$.attempts.length()").value(0))
                 .andExpect(jsonPath("$.audits.length()").value(2))
                 .andExpect(jsonPath("$.audits[0].toState").value("RECEIVED"))
                 .andExpect(jsonPath("$.audits[1].toState").value("ELIGIBLE"))

@@ -34,6 +34,7 @@ class RecoveryWorkerControllerTest {
 
     @BeforeEach
     void clearEvents() {
+        jdbcTemplate.update("DELETE FROM restore_event_attempt");
         jdbcTemplate.update("DELETE FROM restore_event_audit");
         jdbcTemplate.update("DELETE FROM restore_event_dependency");
         jdbcTemplate.update("DELETE FROM restore_event");
@@ -57,7 +58,10 @@ class RecoveryWorkerControllerTest {
                 .andExpect(jsonPath("$.attemptCount").value(1))
                 .andExpect(jsonPath("$.leaseOwner").value("worker-a"))
                 .andExpect(jsonPath("$.audits.length()").value(3))
-                .andExpect(jsonPath("$.audits[2].toState").value("IN_PROGRESS"));
+                .andExpect(jsonPath("$.audits[2].toState").value("IN_PROGRESS"))
+                .andExpect(jsonPath("$.attempts.length()").value(1))
+                .andExpect(jsonPath("$.attempts[0].outcome").value("IN_PROGRESS"))
+                .andExpect(jsonPath("$.attempts[0].workerId").value("worker-a"));
     }
 
     @Test
@@ -81,7 +85,10 @@ class RecoveryWorkerControllerTest {
                 .andExpect(jsonPath("$.attemptCount").value(2))
                 .andExpect(jsonPath("$.leaseOwner").value("worker-b"))
                 .andExpect(jsonPath("$.audits.length()").value(4))
-                .andExpect(jsonPath("$.audits[3].toState").value("IN_PROGRESS"));
+                .andExpect(jsonPath("$.audits[3].toState").value("IN_PROGRESS"))
+                .andExpect(jsonPath("$.attempts.length()").value(2))
+                .andExpect(jsonPath("$.attempts[0].outcome").value("LEASE_EXPIRED"))
+                .andExpect(jsonPath("$.attempts[1].outcome").value("IN_PROGRESS"));
     }
 
     @Test
@@ -101,6 +108,10 @@ class RecoveryWorkerControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.eventId").value(firstParentId))
                 .andExpect(jsonPath("$.releasedEventIds.length()").value(0));
+        mockMvc.perform(get("/api/v1/events/{eventId}", firstParentId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.attempts[0].outcome").value("SUCCEEDED"))
+                .andExpect(jsonPath("$.attempts[0].finishedAt").isNotEmpty());
         mockMvc.perform(get("/api/v1/events/{eventId}", childId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.state").value("BLOCKED"));

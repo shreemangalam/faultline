@@ -1,6 +1,9 @@
 package dev.shreemangalam.faultline.restore.service;
 
+import dev.shreemangalam.faultline.restore.domain.RecoveryAttemptOutcome;
 import dev.shreemangalam.faultline.restore.domain.RecoveryEventState;
+import dev.shreemangalam.faultline.restore.persistence.RecoveryAttemptEntity;
+import dev.shreemangalam.faultline.restore.persistence.RecoveryAttemptRepository;
 import dev.shreemangalam.faultline.restore.persistence.RecoveryEventAuditEntity;
 import dev.shreemangalam.faultline.restore.persistence.RecoveryEventAuditRepository;
 import dev.shreemangalam.faultline.restore.persistence.RecoveryEventDependencyEntity;
@@ -24,13 +27,15 @@ public class RecoveryEventLeaseService {
     private final RecoveryEventRepository eventRepository;
     private final RecoveryEventAuditRepository auditRepository;
     private final RecoveryEventDependencyRepository dependencyRepository;
+    private final RecoveryAttemptRepository attemptRepository;
     private final Clock clock;
     private final CircuitBreakerService circuitBreakerService;
 
-    public RecoveryEventLeaseService(RecoveryEventRepository eventRepository, RecoveryEventAuditRepository auditRepository, RecoveryEventDependencyRepository dependencyRepository, Clock clock, CircuitBreakerService circuitBreakerService) {
+    public RecoveryEventLeaseService(RecoveryEventRepository eventRepository, RecoveryEventAuditRepository auditRepository, RecoveryEventDependencyRepository dependencyRepository, RecoveryAttemptRepository attemptRepository, Clock clock, CircuitBreakerService circuitBreakerService) {
         this.eventRepository = eventRepository;
         this.auditRepository = auditRepository;
         this.dependencyRepository = dependencyRepository;
+        this.attemptRepository = attemptRepository;
         this.clock = clock;
         this.circuitBreakerService = circuitBreakerService;
     }
@@ -45,7 +50,9 @@ public class RecoveryEventLeaseService {
         List<RecoveryEventAuditEntity> audits = events.stream().map(event -> {
             boolean reclaimed = event.getState() == RecoveryEventState.IN_PROGRESS;
             boolean retryDue = event.getState() == RecoveryEventState.RETRY_SCHEDULED;
+            if (reclaimed) closeExpiredAttempt(event, now);
             event.claim(command.workerId(), leaseExpiresAt, now);
+            attemptRepository.save(new RecoveryAttemptEntity(UUID.randomUUID(), event.getId(), event.getAttemptCount(), command.workerId(), now));
             String reason = reclaimed ? "Visibility lease expired; reclaimed by worker " + command.workerId() + "."
                     : retryDue ? "Retry became eligible and was claimed by worker " + command.workerId() + "."
                     : "Claimed by worker " + command.workerId() + ".";
@@ -59,13 +66,16 @@ public class RecoveryEventLeaseService {
     public RetryRecoveryEvent retry(RetryRecoveryEventCommand command) {
         Instant now = clock.instant();
         RecoveryEventEntity event = ownedLease(command.eventId(), command.workerId(), now);
+        RecoveryAttemptEntity attempt = activeAttempt(event);
         circuitBreakerService.recordFailure(event.getTargetSystem(), now);
         if (event.getAttemptCount() >= 3) {
+            attempt.finish(RecoveryAttemptOutcome.EXHAUSTED, command.reason(), now);
             event.exhaust(now);
             auditRepository.save(new RecoveryEventAuditEntity(UUID.randomUUID(), event.getId(), RecoveryEventState.EXHAUSTED, "Retry limit reached: " + command.reason(), now));
             return new RetryRecoveryEvent(event.getId(), event.getState(), null);
         }
         Instant nextEligibleAt = now.plus(retryDelay(event.getAttemptCount()));
+        attempt.finish(RecoveryAttemptOutcome.TRANSIENT_FAILURE, command.reason(), now);
         event.scheduleRetry(nextEligibleAt, now);
         auditRepository.save(new RecoveryEventAuditEntity(UUID.randomUUID(), event.getId(), RecoveryEventState.RETRY_SCHEDULED, command.reason(), now));
         return new RetryRecoveryEvent(event.getId(), event.getState(), nextEligibleAt);
@@ -75,6 +85,7 @@ public class RecoveryEventLeaseService {
     public CompletedRecoveryEvent complete(CompleteRecoveryEventCommand command) {
         Instant now = clock.instant();
         RecoveryEventEntity event = ownedLease(command.eventId(), command.workerId(), now);
+        activeAttempt(event).finish(RecoveryAttemptOutcome.SUCCEEDED, null, now);
         circuitBreakerService.recordSuccess(event.getTargetSystem(), now);
         event.complete(now);
         auditRepository.save(new RecoveryEventAuditEntity(UUID.randomUUID(), event.getId(), RecoveryEventState.COMPLETED, "Completed by worker " + command.workerId() + ".", now));
@@ -90,6 +101,16 @@ public class RecoveryEventLeaseService {
     }
 
     private Duration retryDelay(int attemptCount) { return Duration.ofSeconds(Math.min(60, 5L * (1L << Math.max(0, attemptCount - 1)))); }
+
+    private RecoveryAttemptEntity activeAttempt(RecoveryEventEntity event) {
+        return attemptRepository.findByEventIdAndFinishedAtIsNull(event.getId())
+                .orElseGet(() -> attemptRepository.save(new RecoveryAttemptEntity(
+                        UUID.randomUUID(), event.getId(), event.getAttemptCount(), event.getLeaseOwner(), event.getUpdatedAt())));
+    }
+
+    private void closeExpiredAttempt(RecoveryEventEntity event, Instant now) {
+        activeAttempt(event).finish(RecoveryAttemptOutcome.LEASE_EXPIRED, "Visibility lease expired before completion.", now);
+    }
 
     private List<UUID> releaseIfUnblocked(UUID eventId, Instant now) {
         RecoveryEventEntity dependent = eventRepository.lockById(eventId).orElseThrow();
