@@ -6,6 +6,8 @@ An event may name up to 20 prerequisite event IDs. Prerequisites must exist, be 
 
 A worker calls `POST /api/v1/worker/claims` with a worker ID, batch size, and lease duration. Restore selects due eligible events and expired `IN_PROGRESS` leases with a transactional `FOR UPDATE SKIP LOCKED` query, then persists `IN_PROGRESS`, the lease owner and expiry, an incremented attempt count, and an audit entry before returning work. This is at-least-once processing: a crashed worker’s lease becomes visible for another worker to reclaim. The lease-owning worker completes work through `POST /api/v1/worker/claims/{eventId}/complete`; a stale or different worker is rejected. Transient failure uses capped 5s, 10s, then 20s retry scheduling. After the third claimed attempt, the event becomes `EXHAUSTED` rather than retrying forever. Jitter and downstream classification remain next.
 
+Each target system has a persisted `CLOSED`, `OPEN`, or `HALF_OPEN` circuit visible at `GET /api/v1/circuit-breakers`. Three qualifying transient failures open the circuit for 30 seconds. Claims are suppressed during cooldown; after cooldown, a pessimistically locked circuit row permits one half-open probe. Probe success closes and resets the circuit, while probe failure reopens it for 60 seconds.
+
 Survey and Restore currently share the local PostgreSQL database for an easy Compose demo. Restore uses a separate Flyway history table and baselines at version `0` before applying its own migrations, which lets it migrate alongside Survey without treating Survey tables as its schema history.
 
 Run the full local stack with `docker compose -f infra/compose.yaml up --build`; Restore health is at `http://localhost:8082/actuator/health`.

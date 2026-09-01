@@ -6,4 +6,6 @@
 - Added persisted event prerequisites. A child with any incomplete prerequisite is recorded as `BLOCKED`; duplicate, missing, or cross-correlation prerequisites are rejected. Dependency IDs participate in the idempotency fingerprint. Releasing a blocked event remains deliberately deferred to the worker-transition slice.
 - Added a bounded worker claim API backed by PostgreSQL-compatible `FOR UPDATE SKIP LOCKED`. Claims persist a visibility lease and audit entry; an expired lease is reclaimable by another worker, providing at-least-once recovery after a worker crash.
 - Added lease-owner-guarded completion. Completing a prerequisite transactionally releases only dependants whose full prerequisite set is complete.
-- Restore uses its own Flyway history table in the shared demo database; retry scheduling, poison-message handling, circuit health, and the downstream simulator remain the next increments.
+- Added bounded retry scheduling and poison-event exhaustion after three attempts.
+- Added persisted target circuits with open-circuit claim suppression, a single half-open probe, and success reset.
+- Restore uses its own Flyway history table in the shared demo database; jitter, failure classification, attempt details, and the downstream simulator remain next.
