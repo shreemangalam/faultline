@@ -21,6 +21,7 @@ dashboard/node_modules/
 dashboard/.next/
 dashboard/out/
 dashboard/.env.local
+*.tsbuildinfo
 
 # IDE files
 .idea/

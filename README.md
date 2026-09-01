@@ -17,7 +17,7 @@ It contains two linked backend modules and one operator dashboard:
 
 ## Status
 
-Project foundation in progress. The public design baseline is available in [`docs/planning`](docs/planning).
+Survey is a complete, containerised impact-analysis module. Restore is the next module. The public design baseline is available in [`docs/planning`](docs/planning).
 
 No real SAP, CPI, Salesforce, customer data, or credentials are used. All demo systems and payloads are fictional and run locally.
 
@@ -34,3 +34,11 @@ The repository will contain production-style source, tests, architecture/design 
 ## Planned stack
 
 Java 21 or later LTS, Spring Boot, Maven, PostgreSQL, Flyway, Next.js, TypeScript, D3, Docker Compose, JUnit, Testcontainers, WireMock, and GitHub Actions.
+
+## Run Survey locally
+
+```powershell
+docker compose -f infra/compose.yaml up --build
+```
+
+Open the operator dashboard at `http://localhost:3000`. The Survey API listens on `http://localhost:8081`; its versioned contract is [here](docs/api/survey-openapi.json).
