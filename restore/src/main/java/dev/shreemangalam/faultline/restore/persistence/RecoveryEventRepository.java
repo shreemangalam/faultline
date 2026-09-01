@@ -1,7 +1,9 @@
 package dev.shreemangalam.faultline.restore.persistence;
 
 import dev.shreemangalam.faultline.restore.domain.RecoveryEventState;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -13,6 +15,10 @@ import java.util.UUID;
 public interface RecoveryEventRepository extends JpaRepository<RecoveryEventEntity, UUID> {
     Optional<RecoveryEventEntity> findByIdempotencyKey(String idempotencyKey);
     List<RecoveryEventEntity> findByStateOrderByCreatedAtAsc(RecoveryEventState state);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT recoveryEvent FROM RecoveryEventEntity recoveryEvent WHERE recoveryEvent.id = :eventId")
+    Optional<RecoveryEventEntity> lockById(@Param("eventId") UUID eventId);
 
     @Query(value = """
             SELECT * FROM restore_event

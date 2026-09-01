@@ -79,6 +79,25 @@ public class RecoveryEventEntity {
         updatedAt = now;
     }
 
+    public void complete(Instant now) {
+        if (state != RecoveryEventState.IN_PROGRESS) {
+            throw new IllegalStateException("Only leased events can be completed.");
+        }
+        state = RecoveryEventState.COMPLETED;
+        leaseOwner = null;
+        leaseExpiresAt = null;
+        updatedAt = now;
+    }
+
+    public void release(Instant now) {
+        if (state != RecoveryEventState.BLOCKED) {
+            throw new IllegalStateException("Only blocked events can be released.");
+        }
+        state = RecoveryEventState.ELIGIBLE;
+        nextEligibleAt = now;
+        updatedAt = now;
+    }
+
     public UUID getId() { return id; }
     public String getIdempotencyKey() { return idempotencyKey; }
     public String getRequestFingerprint() { return requestFingerprint; }
