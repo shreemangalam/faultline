@@ -6,15 +6,37 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-faultline}
       POSTGRES_USER: ${POSTGRES_USER:-faultline}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me-locally}
-    ports:
-      - "5432:5432"
+    ports: ["5432:5432"]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 5s
       timeout: 3s
       retries: 10
-    volumes:
-      - postgres-data:/var/lib/postgresql/data
+    volumes: [postgres-data:/var/lib/postgresql/data]
+
+  survey:
+    build:
+      context: ..
+      dockerfile: survey/Dockerfile
+    environment:
+      SURVEY_DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-faultline}
+      POSTGRES_USER: ${POSTGRES_USER:-faultline}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me-locally}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports: ["8081:8081"]
+
+  dashboard:
+    build:
+      context: ..
+      dockerfile: dashboard/Dockerfile
+      args:
+        SURVEY_API_URL: http://survey:8081
+    environment:
+      SURVEY_API_URL: http://survey:8081
+    depends_on: [survey]
+    ports: ["3000:3000"]
 
 volumes:
   postgres-data:

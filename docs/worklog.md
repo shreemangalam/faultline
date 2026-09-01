@@ -31,3 +31,7 @@ This is a concise, versioned record of shipped engineering decisions. It is inte
 ## 2026-09-01 — Survey landscape warnings
 
 - Added a pre-incident cycle-warning endpoint for the active topology and verified the bundled legacy cycle through the 22-test shared/Survey suite.
+## 2026-09-01 — Survey dashboard and local runtime
+
+- Added a functional Next.js/TypeScript/D3 dashboard and a three-service Compose topology for PostgreSQL, Survey, and the browser UI.
+- Verified frontend type checking and production build, plus the live Compose stack: Survey health is UP; PostgreSQL persists and retrieves impact reports; the dashboard and its internal proxy return 200 with 16 systems and 35 integrations.
