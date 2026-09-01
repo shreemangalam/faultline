@@ -28,3 +28,6 @@ This is a concise, versioned record of shipped engineering decisions. It is inte
 
 - Made `POST /api/v1/analysis/impact` create a timestamped immutable incident report and added retrieval by report ID.
 - The snapshot contains classification, ranked priorities, recovery output, warnings, and a stable landscape reference; 21 shared/Survey tests verify the workflow and classification rules.
+## 2026-09-01 — Survey landscape warnings
+
+- Added a pre-incident cycle-warning endpoint for the active topology and verified the bundled legacy cycle through the 22-test shared/Survey suite.
