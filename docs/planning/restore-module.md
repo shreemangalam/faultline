@@ -29,7 +29,7 @@ IN_PROGRESS     -> FAILED_FINAL  (non-retriable failure)
 
 PostgreSQL is the authoritative store. It contains event state, retry timestamps, attempt records, dependency relations, circuit-breaker state, and audit entries. This means a process restart cannot lose queued work.
 
-A worker periodically claims a small batch of eligible records whose retry time has arrived. The eventual implementation will use transactional locking suitable for concurrent workers (for example, PostgreSQL `FOR UPDATE SKIP LOCKED`) so two workers cannot process the same event. This is more robust than relying only on an in-memory `PriorityBlockingQueue`.
+A worker periodically claims a small batch of eligible records whose retry time has arrived. Worker claims use PostgreSQL `FOR UPDATE SKIP LOCKED` inside a short transaction, so two workers cannot claim the same event. This is more robust than relying only on an in-memory `PriorityBlockingQueue`.
 
 An in-memory queue can later improve local ordering, but it is an optimisation, never a durability mechanism.
 

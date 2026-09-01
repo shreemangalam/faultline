@@ -1,8 +1,10 @@
 # Restore durable event foundation
 
-Restore accepts durable recovery events through `POST /api/v1/events`, returns an existing event for an identical idempotent submission, and rejects a reused key with different business input. `GET /api/v1/events/{eventId}` returns persisted state, prerequisite IDs, and audit history; `GET /api/v1/events?status=ELIGIBLE` exposes the initial operational queue.
+Restore accepts durable recovery events through `POST /api/v1/events`, returns an existing event for an identical idempotent submission, and rejects a reused key with different business input. `GET /api/v1/events/{eventId}` returns persisted state, prerequisite IDs, lease details, and audit history; `GET /api/v1/events?status=ELIGIBLE` exposes the operational queue.
 
-An event may name up to 20 prerequisite event IDs. Prerequisites must exist, be unique, and use the same correlation ID. If any prerequisite is not `COMPLETED`, the new event is persisted as `BLOCKED` with an audit entry; otherwise it is `ELIGIBLE`. Prerequisite membership is part of the idempotency fingerprint, so reusing a key with changed dependencies is rejected. This increment records the gate only: a future worker/transition slice will release blocked events after prerequisites complete.
+An event may name up to 20 prerequisite event IDs. Prerequisites must exist, be unique, and use the same correlation ID. If any prerequisite is not `COMPLETED`, the new event is persisted as `BLOCKED` with an audit entry; otherwise it is `ELIGIBLE`. Prerequisite membership is part of the idempotency fingerprint, so reusing a key with changed dependencies is rejected. A later transition slice will release blocked events after prerequisites complete.
+
+A worker calls `POST /api/v1/worker/claims` with a worker ID, batch size, and lease duration. Restore selects due eligible events and expired `IN_PROGRESS` leases with a transactional `FOR UPDATE SKIP LOCKED` query, then persists `IN_PROGRESS`, the lease owner and expiry, an incremented attempt count, and an audit entry before returning work. This is at-least-once processing: a crashed worker’s lease becomes visible for another worker to reclaim. The next slice will complete or retry the claimed work.
 
 Survey and Restore currently share the local PostgreSQL database for an easy Compose demo. Restore uses a separate Flyway history table and baselines at version `0` before applying its own migrations, which lets it migrate alongside Survey without treating Survey tables as its schema history.
 

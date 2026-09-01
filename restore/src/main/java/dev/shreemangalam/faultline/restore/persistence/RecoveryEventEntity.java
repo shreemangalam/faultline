@@ -37,6 +37,10 @@ public class RecoveryEventEntity {
     private int attemptCount;
     @Column(name = "next_eligible_at", nullable = false)
     private Instant nextEligibleAt;
+    @Column(name = "lease_owner", length = 100)
+    private String leaseOwner;
+    @Column(name = "lease_expires_at")
+    private Instant leaseExpiresAt;
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
     @Column(name = "updated_at", nullable = false)
@@ -64,6 +68,17 @@ public class RecoveryEventEntity {
         return new RecoveryEventEntity(id, idempotencyKey, requestFingerprint, correlationId, targetSystem, payloadReference, priority, deadlineAt, initialState, now);
     }
 
+    public void claim(String workerId, Instant expiresAt, Instant now) {
+        if (state != RecoveryEventState.ELIGIBLE && state != RecoveryEventState.IN_PROGRESS) {
+            throw new IllegalStateException("Only eligible or leased events can be claimed.");
+        }
+        state = RecoveryEventState.IN_PROGRESS;
+        leaseOwner = workerId;
+        leaseExpiresAt = expiresAt;
+        attemptCount++;
+        updatedAt = now;
+    }
+
     public UUID getId() { return id; }
     public String getIdempotencyKey() { return idempotencyKey; }
     public String getRequestFingerprint() { return requestFingerprint; }
@@ -75,6 +90,8 @@ public class RecoveryEventEntity {
     public RecoveryEventState getState() { return state; }
     public int getAttemptCount() { return attemptCount; }
     public Instant getNextEligibleAt() { return nextEligibleAt; }
+    public String getLeaseOwner() { return leaseOwner; }
+    public Instant getLeaseExpiresAt() { return leaseExpiresAt; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
 }
