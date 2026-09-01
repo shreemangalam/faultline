@@ -43,4 +43,6 @@ This is a concise, versioned record of shipped engineering decisions. It is inte
 
 ## 2026-09-01 — Restore durable event foundation
 
-- Added persisted recovery events, lifecycle audit records, idempotent submit/retrieve APIs, isolated Flyway history, and the Restore Compose service. Four focused tests and a live PostgreSQL event round-trip pass.
+- Added persisted recovery events, lifecycle audit records, idempotent submit/retrieve APIs, isolated Flyway history, and the Restore Compose service.
+- Added persisted prerequisites: incomplete same-correlation dependencies make a child BLOCKED and participate in idempotency; a later worker slice will release it.
+- Verified six focused Restore tests, the full Maven reactor, and a live PostgreSQL dependency round-trip.

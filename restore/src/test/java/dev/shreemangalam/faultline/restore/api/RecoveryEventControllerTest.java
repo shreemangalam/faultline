@@ -64,6 +64,41 @@ class RecoveryEventControllerTest {
     }
 
     @Test
+    void blocksAChildUntilPersistedPrerequisitesComplete() throws Exception {
+        String correlationId = "order-dependency-" + UUID.randomUUID();
+        String parent = mockMvc.perform(post("/api/v1/events").contentType(MediaType.APPLICATION_JSON)
+                        .content(request("parent-" + UUID.randomUUID(), correlationId, "s3://restore/parent.json")))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+        String parentId = objectMapper.readTree(parent).path("eventId").asText();
+
+        String child = mockMvc.perform(post("/api/v1/events").contentType(MediaType.APPLICATION_JSON)
+                        .content(dependentRequest("child-" + UUID.randomUUID(), correlationId, parentId)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.state").value("BLOCKED"))
+                .andExpect(jsonPath("$.prerequisiteEventIds[0]").value(parentId))
+                .andExpect(jsonPath("$.audits[1].toState").value("BLOCKED"))
+                .andReturn().getResponse().getContentAsString();
+
+        mockMvc.perform(get("/api/v1/events/{eventId}", objectMapper.readTree(child).path("eventId").asText()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.state").value("BLOCKED"))
+                .andExpect(jsonPath("$.prerequisiteEventIds.length()").value(1));
+    }
+
+    @Test
+    void rejectsPrerequisitesFromAnotherCorrelation() throws Exception {
+        String parent = mockMvc.perform(post("/api/v1/events").contentType(MediaType.APPLICATION_JSON)
+                        .content(request("foreign-parent-" + UUID.randomUUID(), "order-a", "s3://restore/foreign-parent.json")))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+
+        mockMvc.perform(post("/api/v1/events").contentType(MediaType.APPLICATION_JSON)
+                        .content(dependentRequest("foreign-child-" + UUID.randomUUID(), "order-b", objectMapper.readTree(parent).path("eventId").asText())))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     void filtersTheOperationalQueueByState() throws Exception {
         mockMvc.perform(post("/api/v1/events").contentType(MediaType.APPLICATION_JSON).content(request("queue-" + UUID.randomUUID(), "s3://restore/queue.json")))
                 .andExpect(status().isCreated());
@@ -73,8 +108,18 @@ class RecoveryEventControllerTest {
     }
 
     private String request(String idempotencyKey, String payloadReference) {
+        return request(idempotencyKey, "order-42", payloadReference);
+    }
+
+    private String request(String idempotencyKey, String correlationId, String payloadReference) {
         return """
-                {"idempotencyKey":"%s","correlationId":"order-42","targetSystem":"SALESFORCE","payloadReference":"%s","priority":1}
-                """.formatted(idempotencyKey, payloadReference);
+                {"idempotencyKey":"%s","correlationId":"%s","targetSystem":"SALESFORCE","payloadReference":"%s","priority":1}
+                """.formatted(idempotencyKey, correlationId, payloadReference);
+    }
+
+    private String dependentRequest(String idempotencyKey, String correlationId, String prerequisiteEventId) {
+        return """
+                {"idempotencyKey":"%s","correlationId":"%s","targetSystem":"LEGACY_WMS","payloadReference":"s3://restore/child.json","priority":1,"prerequisiteEventIds":["%s"]}
+                """.formatted(idempotencyKey, correlationId, prerequisiteEventId);
     }
 }

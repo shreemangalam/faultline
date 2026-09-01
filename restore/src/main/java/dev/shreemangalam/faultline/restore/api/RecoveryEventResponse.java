@@ -18,6 +18,7 @@ public record RecoveryEventResponse(
         int attemptCount,
         Instant nextEligibleAt,
         Instant createdAt,
+        List<UUID> prerequisiteEventIds,
         List<RecoveryEventAuditResponse> audits
 ) {
 }

@@ -44,7 +44,7 @@ public class RecoveryEventEntity {
 
     protected RecoveryEventEntity() { }
 
-    private RecoveryEventEntity(UUID id, String idempotencyKey, String requestFingerprint, String correlationId, String targetSystem, String payloadReference, int priority, Instant deadlineAt, Instant now) {
+    private RecoveryEventEntity(UUID id, String idempotencyKey, String requestFingerprint, String correlationId, String targetSystem, String payloadReference, int priority, Instant deadlineAt, RecoveryEventState initialState, Instant now) {
         this.id = id;
         this.idempotencyKey = idempotencyKey;
         this.requestFingerprint = requestFingerprint;
@@ -53,15 +53,15 @@ public class RecoveryEventEntity {
         this.payloadReference = payloadReference;
         this.priority = priority;
         this.deadlineAt = deadlineAt;
-        this.state = RecoveryEventState.ELIGIBLE;
+        this.state = initialState;
         this.attemptCount = 0;
         this.nextEligibleAt = now;
         this.createdAt = now;
         this.updatedAt = now;
     }
 
-    public static RecoveryEventEntity receive(UUID id, String idempotencyKey, String requestFingerprint, String correlationId, String targetSystem, String payloadReference, int priority, Instant deadlineAt, Instant now) {
-        return new RecoveryEventEntity(id, idempotencyKey, requestFingerprint, correlationId, targetSystem, payloadReference, priority, deadlineAt, now);
+    public static RecoveryEventEntity receive(UUID id, String idempotencyKey, String requestFingerprint, String correlationId, String targetSystem, String payloadReference, int priority, Instant deadlineAt, RecoveryEventState initialState, Instant now) {
+        return new RecoveryEventEntity(id, idempotencyKey, requestFingerprint, correlationId, targetSystem, payloadReference, priority, deadlineAt, initialState, now);
     }
 
     public UUID getId() { return id; }

@@ -3,6 +3,8 @@ package dev.shreemangalam.faultline.restore.service;
 import dev.shreemangalam.faultline.restore.domain.RecoveryEventState;
 import dev.shreemangalam.faultline.restore.persistence.RecoveryEventAuditEntity;
 import dev.shreemangalam.faultline.restore.persistence.RecoveryEventAuditRepository;
+import dev.shreemangalam.faultline.restore.persistence.RecoveryEventDependencyEntity;
+import dev.shreemangalam.faultline.restore.persistence.RecoveryEventDependencyRepository;
 import dev.shreemangalam.faultline.restore.persistence.RecoveryEventEntity;
 import dev.shreemangalam.faultline.restore.persistence.RecoveryEventRepository;
 import org.springframework.http.HttpStatus;
@@ -15,9 +17,11 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Clock;
 import java.time.Instant;
+import java.util.HashSet;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -25,11 +29,13 @@ public class RecoveryEventService {
 
     private final RecoveryEventRepository eventRepository;
     private final RecoveryEventAuditRepository auditRepository;
+    private final RecoveryEventDependencyRepository dependencyRepository;
     private final Clock clock;
 
-    public RecoveryEventService(RecoveryEventRepository eventRepository, RecoveryEventAuditRepository auditRepository, Clock clock) {
+    public RecoveryEventService(RecoveryEventRepository eventRepository, RecoveryEventAuditRepository auditRepository, RecoveryEventDependencyRepository dependencyRepository, Clock clock) {
         this.eventRepository = eventRepository;
         this.auditRepository = auditRepository;
+        this.dependencyRepository = dependencyRepository;
         this.clock = clock;
     }
 
@@ -43,12 +49,22 @@ public class RecoveryEventService {
             return new Submission(details(existing.get()), false);
         }
 
+        List<RecoveryEventEntity> prerequisites = prerequisites(command);
         Instant now = clock.instant();
-        RecoveryEventEntity event = RecoveryEventEntity.receive(UUID.randomUUID(), command.idempotencyKey(), fingerprint, command.correlationId(), command.targetSystem(), command.payloadReference(), command.priority(), command.deadlineAt(), now);
+        boolean prerequisitesComplete = prerequisites.stream().allMatch(event -> event.getState() == RecoveryEventState.COMPLETED);
+        RecoveryEventState initialState = prerequisitesComplete ? RecoveryEventState.ELIGIBLE : RecoveryEventState.BLOCKED;
+        RecoveryEventEntity event = RecoveryEventEntity.receive(
+                UUID.randomUUID(), command.idempotencyKey(), fingerprint, command.correlationId(), command.targetSystem(),
+                command.payloadReference(), command.priority(), command.deadlineAt(), initialState, now);
         eventRepository.save(event);
+        dependencyRepository.saveAll(prerequisites.stream()
+                .map(prerequisite -> new RecoveryEventDependencyEntity(UUID.randomUUID(), event.getId(), prerequisite.getId()))
+                .toList());
         auditRepository.saveAll(List.of(
                 new RecoveryEventAuditEntity(UUID.randomUUID(), event.getId(), RecoveryEventState.RECEIVED, "Event accepted for recovery.", now),
-                new RecoveryEventAuditEntity(UUID.randomUUID(), event.getId(), RecoveryEventState.ELIGIBLE, "No prerequisites are registered.", now)
+                new RecoveryEventAuditEntity(UUID.randomUUID(), event.getId(), initialState, initialState == RecoveryEventState.ELIGIBLE
+                        ? "No incomplete prerequisites are registered."
+                        : "Waiting for " + prerequisites.size() + " prerequisite event(s).", now)
         ));
         return new Submission(details(event), true);
     }
@@ -66,12 +82,34 @@ public class RecoveryEventService {
         return events.stream().map(this::details).toList();
     }
 
+    private List<RecoveryEventEntity> prerequisites(CreateRecoveryEventCommand command) {
+        if (new HashSet<>(command.prerequisiteEventIds()).size() != command.prerequisiteEventIds().size()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Prerequisite event IDs must be unique.");
+        }
+        return command.prerequisiteEventIds().stream().map(prerequisiteEventId -> {
+            RecoveryEventEntity prerequisite = eventRepository.findById(prerequisiteEventId)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Prerequisite recovery event was not found."));
+            if (!prerequisite.getCorrelationId().equals(command.correlationId())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Prerequisites must use the same correlation ID.");
+            }
+            return prerequisite;
+        }).toList();
+    }
+
     private RecoveryEventDetails details(RecoveryEventEntity event) {
-        return new RecoveryEventDetails(event, auditRepository.findByEventIdOrderByOccurredAtAsc(event.getId()));
+        List<UUID> prerequisiteEventIds = dependencyRepository.findByEventIdOrderByPrerequisiteEventIdAsc(event.getId()).stream()
+                .map(RecoveryEventDependencyEntity::getPrerequisiteEventId)
+                .toList();
+        return new RecoveryEventDetails(event, auditRepository.findByEventIdOrderByOccurredAtAsc(event.getId()), prerequisiteEventIds);
     }
 
     private String fingerprint(CreateRecoveryEventCommand command) {
-        String canonical = String.join("\u001F", command.correlationId(), command.targetSystem(), command.payloadReference(), Integer.toString(command.priority()), command.deadlineAt() == null ? "" : command.deadlineAt().toString());
+        String prerequisiteIds = command.prerequisiteEventIds().stream()
+                .map(UUID::toString)
+                .sorted()
+                .collect(Collectors.joining(","));
+        String canonical = String.join("\u001F", command.correlationId(), command.targetSystem(), command.payloadReference(),
+                Integer.toString(command.priority()), command.deadlineAt() == null ? "" : command.deadlineAt().toString(), prerequisiteIds);
         try {
             return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(canonical.getBytes(StandardCharsets.UTF_8)));
         } catch (NoSuchAlgorithmException exception) {
