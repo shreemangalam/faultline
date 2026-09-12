@@ -8,5 +8,6 @@ public enum RecoveryEventState {
     RETRY_SCHEDULED,
     COMPLETED,
     EXHAUSTED,
-    FAILED_FINAL
+    FAILED_FINAL,
+    FAILED_DEPENDENCY
 }

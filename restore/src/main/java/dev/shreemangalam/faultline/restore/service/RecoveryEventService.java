@@ -57,8 +57,14 @@ public class RecoveryEventService {
         List<RecoveryEventEntity> prerequisites = prerequisites(command);
         Instant now = clock.instant();
         circuitBreakerService.ensureExists(command.targetSystem(), now);
+        RecoveryEventEntity failedPrerequisite = prerequisites.stream()
+                .filter(event -> isTerminalFailure(event.getState()))
+                .findFirst()
+                .orElse(null);
         boolean prerequisitesComplete = prerequisites.stream().allMatch(event -> event.getState() == RecoveryEventState.COMPLETED);
-        RecoveryEventState initialState = prerequisitesComplete ? RecoveryEventState.ELIGIBLE : RecoveryEventState.BLOCKED;
+        RecoveryEventState initialState = failedPrerequisite != null
+                ? RecoveryEventState.FAILED_DEPENDENCY
+                : prerequisitesComplete ? RecoveryEventState.ELIGIBLE : RecoveryEventState.BLOCKED;
         RecoveryEventEntity event = RecoveryEventEntity.receive(
                 UUID.randomUUID(), command.idempotencyKey(), fingerprint, command.correlationId(), command.targetSystem(),
                 command.payloadReference(), command.priority(), command.deadlineAt(), initialState, now);
@@ -68,9 +74,8 @@ public class RecoveryEventService {
                 .toList());
         auditRepository.saveAll(List.of(
                 new RecoveryEventAuditEntity(UUID.randomUUID(), event.getId(), RecoveryEventState.RECEIVED, "Event accepted for recovery.", now),
-                new RecoveryEventAuditEntity(UUID.randomUUID(), event.getId(), initialState, initialState == RecoveryEventState.ELIGIBLE
-                        ? "No incomplete prerequisites are registered."
-                        : "Waiting for " + prerequisites.size() + " prerequisite event(s).", now)
+                new RecoveryEventAuditEntity(UUID.randomUUID(), event.getId(), initialState, initialReason(
+                        initialState, prerequisites.size(), failedPrerequisite), now)
         ));
         return new Submission(details(event), true);
     }
@@ -100,6 +105,24 @@ public class RecoveryEventService {
             }
             return prerequisite;
         }).toList();
+    }
+
+    private String initialReason(
+            RecoveryEventState initialState,
+            int prerequisiteCount,
+            RecoveryEventEntity failedPrerequisite) {
+        if (initialState == RecoveryEventState.ELIGIBLE) return "No incomplete prerequisites are registered.";
+        if (initialState == RecoveryEventState.FAILED_DEPENDENCY) {
+            return "Prerequisite " + failedPrerequisite.getId() + " is " + failedPrerequisite.getState()
+                    + "; recovery cannot continue.";
+        }
+        return "Waiting for " + prerequisiteCount + " prerequisite event(s).";
+    }
+
+    private boolean isTerminalFailure(RecoveryEventState state) {
+        return state == RecoveryEventState.EXHAUSTED
+                || state == RecoveryEventState.FAILED_FINAL
+                || state == RecoveryEventState.FAILED_DEPENDENCY;
     }
 
     private RecoveryEventDetails details(RecoveryEventEntity event) {

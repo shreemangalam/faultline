@@ -38,6 +38,7 @@ class RecoveryWorkerControllerTest {
         jdbcTemplate.update("DELETE FROM restore_event_audit");
         jdbcTemplate.update("DELETE FROM restore_event_dependency");
         jdbcTemplate.update("DELETE FROM restore_event");
+        jdbcTemplate.update("DELETE FROM restore_circuit_breaker");
     }
 
     @Test
@@ -129,6 +130,46 @@ class RecoveryWorkerControllerTest {
     }
 
     @Test
+    void terminalPrerequisiteFailurePropagatesToExistingAndNewDependants() throws Exception {
+        String correlationId = "order-terminal-" + UUID.randomUUID();
+        String rootId = createEvent(correlationId);
+        String childId = createDependentEventWithState(correlationId, "BLOCKED", rootId);
+        String grandchildId = createDependentEventWithState(correlationId, "BLOCKED", childId);
+
+        mockMvc.perform(post("/api/v1/worker/claims").contentType(MediaType.APPLICATION_JSON)
+                        .content(claimRequest("worker-a", 1, 60)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].eventId").value(rootId));
+
+        mockMvc.perform(post("/api/v1/worker/claims/{eventId}/fail-final", rootId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(failRequest("worker-a", "root payload is invalid")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.state").value("FAILED_FINAL"));
+
+        mockMvc.perform(get("/api/v1/events/{eventId}", childId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.state").value("FAILED_DEPENDENCY"))
+                .andExpect(jsonPath("$.attempts.length()").value(0))
+                .andExpect(jsonPath("$.audits[2].toState").value("FAILED_DEPENDENCY"))
+                .andExpect(jsonPath("$.audits[2].reason").value(org.hamcrest.Matchers.containsString(rootId)));
+        mockMvc.perform(get("/api/v1/events/{eventId}", grandchildId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.state").value("FAILED_DEPENDENCY"))
+                .andExpect(jsonPath("$.audits[2].reason").value(org.hamcrest.Matchers.containsString(childId)));
+
+        String lateChildId = createDependentEventWithState(correlationId, "FAILED_DEPENDENCY", rootId);
+        mockMvc.perform(get("/api/v1/events/{eventId}", lateChildId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.audits[1].reason").value(org.hamcrest.Matchers.containsString(rootId)));
+
+        mockMvc.perform(post("/api/v1/worker/claims").contentType(MediaType.APPLICATION_JSON)
+                        .content(claimRequest("worker-b", 10, 60)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(0));
+    }
+
+    @Test
     void recordsPermanentFailuresWithoutRetryingOrOpeningTheCircuit() throws Exception {
         String eventId = createEvent();
         mockMvc.perform(post("/api/v1/worker/claims").contentType(MediaType.APPLICATION_JSON)
@@ -183,12 +224,20 @@ class RecoveryWorkerControllerTest {
     }
 
     private String createDependentEvent(String correlationId, String firstParentId, String secondParentId) throws Exception {
+        return createDependentEventWithState(correlationId, "BLOCKED", firstParentId, secondParentId);
+    }
+
+    private String createDependentEventWithState(
+            String correlationId,
+            String expectedState,
+            String... prerequisiteEventIds) throws Exception {
+        String prerequisiteJson = "\"" + String.join("\",\"", prerequisiteEventIds) + "\"";
         String response = mockMvc.perform(post("/api/v1/events").contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"idempotencyKey":"child-%s","correlationId":"%s","targetSystem":"LEGACY_WMS","payloadReference":"s3://restore/child.json","priority":1,"prerequisiteEventIds":["%s","%s"]}
-                                """.formatted(UUID.randomUUID(), correlationId, firstParentId, secondParentId)))
+                                {"idempotencyKey":"child-%s","correlationId":"%s","targetSystem":"LEGACY_WMS","payloadReference":"s3://restore/child.json","priority":1,"prerequisiteEventIds":[%s]}
+                                """.formatted(UUID.randomUUID(), correlationId, prerequisiteJson)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.state").value("BLOCKED"))
+                .andExpect(jsonPath("$.state").value(expectedState))
                 .andReturn().getResponse().getContentAsString();
         return objectMapper.readTree(response).path("eventId").asText();
     }
