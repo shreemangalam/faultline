@@ -110,6 +110,16 @@ public class RecoveryEventEntity {
         updatedAt = now;
     }
 
+    public void failFinal(Instant now) {
+        if (state != RecoveryEventState.IN_PROGRESS) {
+            throw new IllegalStateException("Only leased events can fail permanently.");
+        }
+        state = RecoveryEventState.FAILED_FINAL;
+        leaseOwner = null;
+        leaseExpiresAt = null;
+        updatedAt = now;
+    }
+
     public void release(Instant now) {
         if (state != RecoveryEventState.BLOCKED) {
             throw new IllegalStateException("Only blocked events can be released.");

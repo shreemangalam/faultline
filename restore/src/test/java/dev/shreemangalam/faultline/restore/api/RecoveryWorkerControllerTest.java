@@ -129,6 +129,34 @@ class RecoveryWorkerControllerTest {
     }
 
     @Test
+    void recordsPermanentFailuresWithoutRetryingOrOpeningTheCircuit() throws Exception {
+        String eventId = createEvent();
+        mockMvc.perform(post("/api/v1/worker/claims").contentType(MediaType.APPLICATION_JSON)
+                        .content(claimRequest("worker-a", 1, 60)))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/v1/worker/claims/{eventId}/fail-final", eventId).contentType(MediaType.APPLICATION_JSON)
+                        .content(failRequest("worker-a", "payload violates downstream schema")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.eventId").value(eventId))
+                .andExpect(jsonPath("$.state").value("FAILED_FINAL"));
+
+        mockMvc.perform(get("/api/v1/events/{eventId}", eventId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.state").value("FAILED_FINAL"))
+                .andExpect(jsonPath("$.leaseOwner").isEmpty())
+                .andExpect(jsonPath("$.attempts[0].outcome").value("PERMANENT_FAILURE"))
+                .andExpect(jsonPath("$.attempts[0].failureReason").value("payload violates downstream schema"));
+        mockMvc.perform(post("/api/v1/worker/claims").contentType(MediaType.APPLICATION_JSON)
+                        .content(claimRequest("worker-b", 1, 60)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(0));
+        Integer failures = jdbcTemplate.queryForObject(
+                "SELECT consecutive_failures FROM restore_circuit_breaker WHERE target_system = 'SALESFORCE'", Integer.class);
+        org.assertj.core.api.Assertions.assertThat(failures).isZero();
+    }
+
+    @Test
     void rejectsCompletionFromAWorkerThatDoesNotOwnTheLease() throws Exception {
         String eventId = createEvent();
         mockMvc.perform(post("/api/v1/worker/claims").contentType(MediaType.APPLICATION_JSON)
@@ -169,6 +197,12 @@ class RecoveryWorkerControllerTest {
         return """
                 {"workerId":"%s","maxEvents":%d,"leaseSeconds":%d}
                 """.formatted(workerId, maxEvents, leaseSeconds);
+    }
+
+    private String failRequest(String workerId, String reason) {
+        return """
+                {"workerId":"%s","reason":"%s"}
+                """.formatted(workerId, reason);
     }
 
     private String completeRequest(String workerId) {

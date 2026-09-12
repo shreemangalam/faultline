@@ -2,6 +2,7 @@ package dev.shreemangalam.faultline.restore.api;
 
 import dev.shreemangalam.faultline.restore.service.ClaimRecoveryEventsCommand;
 import dev.shreemangalam.faultline.restore.service.CompleteRecoveryEventCommand;
+import dev.shreemangalam.faultline.restore.service.FailRecoveryEventCommand;
 import dev.shreemangalam.faultline.restore.service.RecoveryEventLeaseService;
 import dev.shreemangalam.faultline.restore.service.RetryRecoveryEventCommand;
 import jakarta.validation.Valid;
@@ -39,6 +40,13 @@ public class RecoveryWorkerController {
         var result = leaseService.retry(new RetryRecoveryEventCommand(eventId, request.workerId(), request.reason()));
         return new RetryRecoveryEventResponse(result.eventId(), result.state(), result.nextEligibleAt());
     }
+
+    @PostMapping(path = "/claims/{eventId}/fail-final", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public FailedRecoveryEventResponse failFinal(@PathVariable UUID eventId, @Valid @RequestBody FailRecoveryEventRequest request) {
+        var result = leaseService.failFinal(new FailRecoveryEventCommand(eventId, request.workerId(), request.reason()));
+        return new FailedRecoveryEventResponse(result.eventId(), result.state());
+    }
+
     @PostMapping(path = "/claims/{eventId}/complete", consumes = MediaType.APPLICATION_JSON_VALUE)
     public CompletedRecoveryEventResponse complete(@PathVariable UUID eventId, @Valid @RequestBody CompleteRecoveryEventRequest request) {
         var result = leaseService.complete(new CompleteRecoveryEventCommand(eventId, request.workerId()));
