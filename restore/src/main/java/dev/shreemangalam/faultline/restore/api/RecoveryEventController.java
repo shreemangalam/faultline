@@ -60,6 +60,7 @@ public class RecoveryEventController {
                         audit.getId(), audit.getToState(), audit.getReason(), audit.getOccurredAt())).toList(),
                 details.attempts().stream().map(attempt -> new RecoveryAttemptResponse(
                         attempt.getId(), attempt.getAttemptNumber(), attempt.getWorkerId(), attempt.getOutcome(),
-                        attempt.getFailureReason(), attempt.getStartedAt(), attempt.getFinishedAt())).toList());
+                        attempt.getFailureReason(), attempt.getHttpStatus(), attempt.getDurationMillis(),
+                        attempt.getStartedAt(), attempt.getFinishedAt())).toList());
     }
 }

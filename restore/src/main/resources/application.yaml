@@ -16,7 +16,13 @@ spring:
     baseline-version: 0
 
 server:
-  port: 8082
+  port: ${PORT:8082}
+
+restore:
+  downstream:
+    base-url: ${RESTORE_DOWNSTREAM_BASE_URL:}
+    connect-timeout: ${RESTORE_DOWNSTREAM_CONNECT_TIMEOUT:1s}
+    read-timeout: ${RESTORE_DOWNSTREAM_READ_TIMEOUT:2s}
 
 management:
   endpoints:

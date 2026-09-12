@@ -43,7 +43,7 @@ The dashboard is a real **Next.js + TypeScript** application, not a static mocku
 
 The topology board is purposeful: its systems and directed paths are the exact data structures returned by Survey, so a viewer can select a failing node and immediately understand why the impact report changes. A structured SVG layout is used because the sample estate is compact, cyclic, and benefits more from stable operational lanes than force simulation; ordinary cards, tables, filters, and status displays remain conventional React components.
 
-The primary deliverable is a working local demo; not a paid cloud deployment. The public repository will include a short screen recording/GIF, representative screenshots, API examples, seeded data, automated test results, and architecture documents so a reviewer can assess it without running it.
+The primary deliverables are a reproducible local demo and a live demo on a genuinely free hosting path. The provider will be selected and re-verified near release because free-tier terms change; the local Compose workflow remains the no-cost fallback. The public repository will include a short screen recording/GIF, representative screenshots, API examples, seeded data, automated test results, and architecture documents so a reviewer can assess it without running it.
 
 ## 4. Module boundary
 
@@ -126,7 +126,7 @@ No paid cloud product is needed to build, test, or demonstrate Faultline.
 | CI | GitHub Actions for a public repository | Keep workflow lean; do not add paid third-party CI. |
 | Monitoring demonstration | Spring Boot Actuator plus local Prometheus/Grafana containers, if used | No hosted observability service. |
 | API exploration | Swagger UI bundled into the application | No API-management subscription. |
-| Demo hosting | README screenshots/video and optional GitHub Pages static documentation | Do not require a running public backend. |
+| Demo hosting | Free frontend, backend, and PostgreSQL tiers selected after a release-time terms check; local Compose remains the fallback | No card-required or paid dependency; document sleep/cold-start limits. |
 
 Pricing and terms change, so we will re-check before relying on any hosted feature. The current Docker Personal page lists a $0 individual-developer plan: [Docker pricing](https://www.docker.com/pricing/).
 
@@ -158,7 +158,7 @@ This is a learning-first plan. A phase ends only when its code, test evidence, d
 | 4. Dashboard and demo | Next.js shell, structured landscape explorer, impact report UX, API client, screenshots. | React components, TypeScript contracts, accessible data visualisation, and interaction design. | 2–3 days |
 | 5. Restore core | Event state machine, dependencies, durable scheduler, attempt audit, downstream simulator. | State machines, transactions, scheduling, idempotency boundaries. | 2–3 days |
 | 6. Resilience behaviour | Circuit breaker, backoff with jitter, deterministic prioritisation, concurrency tests. | Failure modes, retry storms, locking, ranking and invariants. | 2–3 days |
-| 7. Integration and live UI | SSE updates, scenario controls, metrics/statistics, full workflow from outage to recovery. | Event-driven UI, observability, service integration. | 1–2 days |
+| 7. Integration and live UI | SSE updates, scenario controls, metrics/statistics, Help / How It Works, full workflow from outage to recovery. | Event-driven UI, observability, service integration. | 1–2 days |
 | 8. Release and interview readiness | Hardening, test report, demo recording, README, two project case studies, file-by-file review. | Release discipline, technical storytelling, interview communication. | 2–4 days |
 
 At 2–3 focused hours per day, this is approximately **3–4 weeks**. An intensive build can produce the functional suite in about two weeks, but the final review and learning sessions are important enough that they should not be compressed away.

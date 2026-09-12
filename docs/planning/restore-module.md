@@ -29,7 +29,7 @@ IN_PROGRESS     -> FAILED_FINAL  (non-retriable failure)
 
 PostgreSQL is the authoritative store. It contains event state, retry timestamps, attempt records, dependency relations, circuit-breaker state, and audit entries. This means a process restart cannot lose queued work.
 
-A worker periodically claims a small batch of eligible records whose retry time has arrived. Worker claims use PostgreSQL `FOR UPDATE SKIP LOCKED` inside a short transaction, so two workers cannot claim the same event. This is more robust than relying only on an in-memory `PriorityBlockingQueue`.
+A worker run claims a small batch of eligible records whose retry time has arrived. Worker claims use PostgreSQL `FOR UPDATE SKIP LOCKED` inside a short transaction, so two workers cannot claim the same event. This is more robust than relying only on an in-memory `PriorityBlockingQueue`. The current API triggers one bounded run explicitly; periodic scheduling remains a later operational layer.
 
 An in-memory queue can later improve local ordering, but it is an optimisation, never a durability mechanism.
 
@@ -84,7 +84,11 @@ The implementation will explicitly define which fields are ascending/descending 
 
 ## Downstream simulator and scenarios
 
-A local HTTP simulator plays the role of Salesforce, WMS, or another downstream target. It supports controllable behaviours: success, temporary `503`, rate limit, delayed response, and permanent validation failure.
+A local HTTP simulator plays the role of Salesforce, WMS, or another downstream target. It supports controllable behaviours: success, temporary `503`, rate limit, delayed response, and permanent validation failure. Behavior changes preserve accepted idempotency keys and counters unless a scenario explicitly requests a history reset.
+
+`POST /api/v1/worker/run-once` claims at most ten events with a minimum 30-second visibility lease, then performs each HTTP call outside the claim transaction. The client uses explicit connect/read timeouts, sends the stable event UUID as its downstream idempotency key, classifies `408`, `425`, `429`, and `5xx` responses as transient, and classifies other non-`2xx` responses as permanent. Each attempt records HTTP status when one exists and monotonic request duration.
+
+An integration test covers the ambiguous-outcome case: the client times out, the downstream later commits, and a replay receives duplicate-success without producing a second accepted side effect.
 
 The suite will ship these repeatable scenario controls:
 
@@ -104,6 +108,8 @@ The dashboard will display event-status counts, attempt history, circuit state, 
 | `POST /api/v1/events` | Submit a recovery event. |
 | `GET /api/v1/events/{eventId}` | Retrieve current state and attempt history. |
 | `GET /api/v1/events?status=...` | Query the operational queue. |
+| `POST /api/v1/worker/run-once` | Claim and execute one bounded recovery batch. |
+| `PUT /api/v1/simulator/targets/{targetSystem}` | Configure a repeatable downstream behavior. |
 | `POST /api/v1/scenarios/dependency-cascade` | Load the dependency demo. |
 | `POST /api/v1/scenarios/thundering-herd` | Load the controlled outage demo. |
 | `GET /api/v1/circuit-breakers` | Inspect all target-health states. |
@@ -130,7 +136,7 @@ The UI never decides whether an event may retry. It renders the backend’s reas
 | State modelling | Java enums, explicit transitions, transition guards | Define legal/illegal state changes and test them as a state machine. |
 | Reliable persistence | PostgreSQL, transactions, Flyway | Preserve events, audit history, dependencies, and circuit state across restart. |
 | Concurrent workers | `FOR UPDATE SKIP LOCKED`, transaction boundaries | Understand record claiming, duplicate-work risks, and why locks must be short. |
-| Resilience | WebClient, timeouts, failure classification, circuit breaker, backoff, jitter | Distinguish transient failures from permanent ones and avoid making an outage worse. |
+| Resilience | Spring RestClient, timeouts, failure classification, circuit breaker, backoff, jitter | Distinguish transient failures from permanent ones and avoid making an outage worse. |
 | API and streaming | Spring REST, OpenAPI, SSE | Design query/mutation endpoints and push state changes to a dashboard. |
 | Presentation | Next.js + TypeScript | Build live operational UI without moving business rules into the frontend. |
 | Verification | JUnit, Testcontainers, WireMock | Simulate remote errors and verify recovery correctness against a real database. |

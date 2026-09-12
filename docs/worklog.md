@@ -55,3 +55,5 @@ This is a concise, versioned record of shipped engineering decisions. It is inte
 - Added durable, numbered attempt history for claims, successful completions, transient failures, exhausted retries, and expired worker leases.
 - Added the guarded `FAILED_FINAL` transition. Permanent payload failures terminate without retry and do not count against target health.
 - Added an HTTP downstream simulator with resettable success, `503`, `429`, delayed-success, and validation-failure behavior plus idempotent success receipts.
+- Added bounded real-HTTP recovery execution with explicit timeouts, automatic transient/permanent classification, persisted HTTP attempt evidence, and a tested idempotent replay after an ambiguous timeout.
+- Verified the slice with 20 focused Restore tests, the full 42-test reactor, a rebuilt container/Flyway V6, and one isolated live PostgreSQL-backed successful delivery.

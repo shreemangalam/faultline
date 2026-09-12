@@ -5,4 +5,6 @@
 - Verified 12 focused Restore tests, the full 34-test Maven reactor, a rebuilt Restore container, and a live PostgreSQL transition with the target circuit remaining closed at zero failures.
 - Added a controllable HTTP downstream simulator. Success is idempotent per target and key; repeatable target configuration exposes realistic transient, rate-limit, delayed, and permanent responses.
 - Verified 15 focused Restore tests, the full 37-test Maven reactor, and live container HTTP behavior for first acceptance, duplicate acceptance, counters, and `503` simulation.
-- Automatic HTTP execution and outcome classification remain the next slice.
+- Added a bounded real-HTTP executor at `POST /api/v1/worker/run-once`. It performs network I/O after the short claim transaction, applies explicit timeouts and response classification, and persists HTTP status and duration with each attempt.
+- Preserved simulator acceptance history across behavior changes by default. A real-server integration test proves that a timed-out request can commit downstream and later replay as duplicate-success with one accepted side effect.
+- Verified 20 focused Restore tests, the full 42-test Maven reactor, a rebuilt container with Flyway V6, and a live PostgreSQL-backed execution: one request, one accepted side effect, `COMPLETED`, HTTP `200`, and persisted duration.

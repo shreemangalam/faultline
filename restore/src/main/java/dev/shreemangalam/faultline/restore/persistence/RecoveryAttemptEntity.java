@@ -25,6 +25,10 @@ public class RecoveryAttemptEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 32)
     private RecoveryAttemptOutcome outcome;
+    @Column(name = "http_status")
+    private Integer httpStatus;
+    @Column(name = "duration_ms")
+    private Long durationMillis;
     @Column(name = "failure_reason", length = 500)
     private String failureReason;
     @Column(name = "started_at", nullable = false)
@@ -44,6 +48,10 @@ public class RecoveryAttemptEntity {
     }
 
     public void finish(RecoveryAttemptOutcome outcome, String failureReason, Instant finishedAt) {
+        finish(outcome, failureReason, null, null, finishedAt);
+    }
+
+    public void finish(RecoveryAttemptOutcome outcome, String failureReason, Integer httpStatus, Long durationMillis, Instant finishedAt) {
         if (this.outcome != RecoveryAttemptOutcome.IN_PROGRESS || this.finishedAt != null) {
             throw new IllegalStateException("Only an in-progress recovery attempt can be finished.");
         }
@@ -52,6 +60,8 @@ public class RecoveryAttemptEntity {
         }
         this.outcome = outcome;
         this.failureReason = failureReason;
+        this.httpStatus = httpStatus;
+        this.durationMillis = durationMillis;
         this.finishedAt = finishedAt;
     }
 
@@ -61,6 +71,8 @@ public class RecoveryAttemptEntity {
     public String getWorkerId() { return workerId; }
     public RecoveryAttemptOutcome getOutcome() { return outcome; }
     public String getFailureReason() { return failureReason; }
+    public Integer getHttpStatus() { return httpStatus; }
+    public Long getDurationMillis() { return durationMillis; }
     public Instant getStartedAt() { return startedAt; }
     public Instant getFinishedAt() { return finishedAt; }
 }

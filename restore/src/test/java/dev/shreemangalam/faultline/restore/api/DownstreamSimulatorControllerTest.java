@@ -66,6 +66,27 @@ class DownstreamSimulatorControllerTest {
     }
 
     @Test
+    void preservesDeliveryHistoryAcrossBehaviorChangesUnlessExplicitlyReset() throws Exception {
+        String eventId = UUID.randomUUID().toString();
+        configure("CRM", "SUCCESS", 0);
+        deliver("CRM", eventId, eventId)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.duplicate").value(false));
+
+        configure("CRM", "TEMPORARY_UNAVAILABLE", 0, false, 1);
+        configure("CRM", "SUCCESS", 0, false, 1);
+        deliver("CRM", eventId, eventId)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.duplicate").value(true))
+                .andExpect(jsonPath("$.outcome").value("ALREADY_ACCEPTED"));
+
+        mockMvc.perform(get("/api/v1/simulator/targets/CRM"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.requestCount").value(2))
+                .andExpect(jsonPath("$.acceptedCount").value(1));
+    }
+
+    @Test
     void supportsAControlledDelayedSuccess() throws Exception {
         configure("ERP", "DELAYED_SUCCESS", 10);
         String eventId = UUID.randomUUID().toString();
@@ -76,14 +97,23 @@ class DownstreamSimulatorControllerTest {
     }
 
     private void configure(String targetSystem, String behavior, long delayMillis) throws Exception {
+        configure(targetSystem, behavior, delayMillis, true, 0);
+    }
+
+    private void configure(
+            String targetSystem,
+            String behavior,
+            long delayMillis,
+            boolean resetHistory,
+            long expectedRequestCount) throws Exception {
         mockMvc.perform(put("/api/v1/simulator/targets/{targetSystem}", targetSystem)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"behavior":"%s","delayMillis":%d}
-                                """.formatted(behavior, delayMillis)))
+                                {"behavior":"%s","delayMillis":%d,"resetHistory":%s}
+                                """.formatted(behavior, delayMillis, resetHistory)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.behavior").value(behavior))
-                .andExpect(jsonPath("$.requestCount").value(0));
+                .andExpect(jsonPath("$.requestCount").value(expectedRequestCount));
     }
 
     private org.springframework.test.web.servlet.ResultActions deliver(String targetSystem, String idempotencyKey, String eventId) throws Exception {

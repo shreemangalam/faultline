@@ -14,9 +14,15 @@ import java.util.concurrent.atomic.AtomicLong;
 public class DownstreamSimulatorService {
     private final ConcurrentHashMap<String, TargetState> targets = new ConcurrentHashMap<>();
 
-    public SimulatorTarget configure(String targetSystem, DownstreamBehavior behavior, long delayMillis) {
-        TargetState state = new TargetState(behavior, delayMillis);
-        targets.put(targetSystem, state);
+    public SimulatorTarget configure(String targetSystem, DownstreamBehavior behavior, long delayMillis, boolean resetHistory) {
+        TargetState state;
+        if (resetHistory) {
+            state = new TargetState(behavior, delayMillis);
+            targets.put(targetSystem, state);
+        } else {
+            state = state(targetSystem);
+            state.configure(behavior, delayMillis);
+        }
         return state.snapshot(targetSystem);
     }
 
@@ -26,9 +32,10 @@ public class DownstreamSimulatorService {
 
     public SimulatedDelivery deliver(String targetSystem, String idempotencyKey) {
         TargetState state = state(targetSystem);
+        TargetConfiguration configuration = state.configuration();
         state.requestCount.incrementAndGet();
-        if (state.behavior == DownstreamBehavior.DELAYED_SUCCESS) delay(state.delayMillis);
-        return switch (state.behavior) {
+        if (configuration.behavior() == DownstreamBehavior.DELAYED_SUCCESS) delay(configuration.delayMillis());
+        return switch (configuration.behavior()) {
             case SUCCESS, DELAYED_SUCCESS -> state.accept(targetSystem, idempotencyKey);
             case TEMPORARY_UNAVAILABLE -> new SimulatedDelivery(503, false, false, null, "TEMPORARY_UNAVAILABLE");
             case RATE_LIMITED -> new SimulatedDelivery(429, false, false, null, "RATE_LIMITED");
@@ -50,15 +57,21 @@ public class DownstreamSimulatorService {
     }
 
     private static final class TargetState {
-        private final DownstreamBehavior behavior;
-        private final long delayMillis;
+        private volatile TargetConfiguration configuration;
         private final AtomicLong requestCount = new AtomicLong();
         private final AtomicLong acceptedCount = new AtomicLong();
         private final Set<String> acceptedKeys = ConcurrentHashMap.newKeySet();
 
         private TargetState(DownstreamBehavior behavior, long delayMillis) {
-            this.behavior = behavior;
-            this.delayMillis = delayMillis;
+            configuration = new TargetConfiguration(behavior, delayMillis);
+        }
+
+        private void configure(DownstreamBehavior behavior, long delayMillis) {
+            configuration = new TargetConfiguration(behavior, delayMillis);
+        }
+
+        private TargetConfiguration configuration() {
+            return configuration;
         }
 
         private SimulatedDelivery accept(String targetSystem, String idempotencyKey) {
@@ -69,7 +82,12 @@ public class DownstreamSimulatorService {
         }
 
         private SimulatorTarget snapshot(String targetSystem) {
-            return new SimulatorTarget(targetSystem, behavior, delayMillis, requestCount.get(), acceptedCount.get());
+            TargetConfiguration snapshot = configuration;
+            return new SimulatorTarget(
+                    targetSystem, snapshot.behavior(), snapshot.delayMillis(), requestCount.get(), acceptedCount.get());
         }
+    }
+
+    private record TargetConfiguration(DownstreamBehavior behavior, long delayMillis) {
     }
 }

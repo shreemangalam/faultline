@@ -33,7 +33,7 @@ public class DownstreamSimulatorController {
     public SimulatorTargetResponse configure(
             @PathVariable @NotBlank @Size(max = 100) String targetSystem,
             @Valid @RequestBody ConfigureSimulatorTargetRequest request) {
-        return response(service.configure(targetSystem, request.behavior(), request.delayMillis()));
+        return response(service.configure(targetSystem, request.behavior(), request.delayMillis(), request.resetHistory()));
     }
 
     @GetMapping("/{targetSystem}")
