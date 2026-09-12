@@ -17,7 +17,7 @@ It contains two linked backend modules and one operator dashboard:
 
 ## Status
 
-Survey is a complete, containerised impact-analysis module. Restore now has durable event intake, dependency-aware release, worker leases, bounded retries, permanent-failure handling, persisted target circuits, and queryable attempt history; downstream execution and aggregate observability are next. The public design baseline is available in [`docs/planning`](docs/planning).
+Survey is a complete, containerised impact-analysis module. Restore now has durable event intake, dependency-aware release, worker leases, bounded retries, permanent-failure handling, persisted target circuits, queryable attempt history, and a controllable downstream simulator; automatic downstream execution and aggregate observability are next. The public design baseline is available in [`docs/planning`](docs/planning).
 
 No real SAP, CPI, Salesforce, customer data, or credentials are used. All demo systems and payloads are fictional and run locally.
 
