@@ -120,6 +120,14 @@ public class RecoveryEventEntity {
         updatedAt = now;
     }
 
+    public void failDependency(Instant now) {
+        if (state != RecoveryEventState.BLOCKED) {
+            throw new IllegalStateException("Only blocked events can fail because of a prerequisite.");
+        }
+        state = RecoveryEventState.FAILED_DEPENDENCY;
+        updatedAt = now;
+    }
+
     public void release(Instant now) {
         if (state != RecoveryEventState.BLOCKED) {
             throw new IllegalStateException("Only blocked events can be released.");

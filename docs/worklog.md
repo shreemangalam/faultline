@@ -57,3 +57,5 @@ This is a concise, versioned record of shipped engineering decisions. It is inte
 - Added an HTTP downstream simulator with resettable success, `503`, `429`, delayed-success, and validation-failure behavior plus idempotent success receipts.
 - Added bounded real-HTTP recovery execution with explicit timeouts, automatic transient/permanent classification, persisted HTTP attempt evidence, and a tested idempotent replay after an ambiguous timeout.
 - Verified the slice with 20 focused Restore tests, the full 42-test reactor, a rebuilt container/Flyway V6, and one isolated live PostgreSQL-backed successful delivery.
+- Added fail-fast, transitive `FAILED_DEPENDENCY` propagation so terminal prerequisites cannot strand current or newly submitted dependant events.
+- Verified with 21 focused Restore tests, the full 43-test reactor, a rebuilt container, and an isolated live PostgreSQL dependency chain.

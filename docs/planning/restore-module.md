@@ -19,11 +19,12 @@ RECEIVED -> ELIGIBLE -> IN_PROGRESS -> COMPLETED
                  |
                  +-> BLOCKED (waiting for prerequisites)
 
-RETRY_SCHEDULED -> EXHAUSTED     (attempt limit or deadline exceeded)
-IN_PROGRESS     -> FAILED_FINAL  (non-retriable failure)
+RETRY_SCHEDULED -> EXHAUSTED          (attempt limit or deadline exceeded)
+IN_PROGRESS     -> FAILED_FINAL       (non-retriable failure)
+BLOCKED         -> FAILED_DEPENDENCY  (a prerequisite cannot complete)
 ```
 
-`BLOCKED` is intentionally distinct from `FAILED_FINAL`: it means the event is valid but cannot yet be processed safely. When all dependencies complete, it becomes eligible automatically.
+`BLOCKED` is non-terminal: the event is valid but cannot yet be processed safely, and it becomes eligible when all dependencies complete. `FAILED_DEPENDENCY` is terminal and records that a prerequisite can no longer complete.
 
 ## Durable design
 
@@ -43,7 +44,7 @@ CUSTOMER_VALIDATED -> ORDER_CREATED -> INVENTORY_RESERVED -> SHIPMENT_SCHEDULED
                                -> PAYMENT_INITIATED -> ORDER_CONFIRMED
 ```
 
-Restore verifies dependency completion before an attempt. A successful prerequisite promotes its dependants for re-evaluation; a terminal prerequisite failure causes a clear, audited downstream outcome according to a documented policy. We will decide that policy explicitly rather than silently retry impossible work.
+Restore verifies dependency completion before an attempt. A successful prerequisite promotes its dependants for re-evaluation. If a prerequisite reaches `EXHAUSTED`, `FAILED_FINAL`, or `FAILED_DEPENDENCY`, every still-blocked descendant transitions to `FAILED_DEPENDENCY` in the same transaction, with an audit entry naming the failed prerequisite. A new event submitted against an already-terminal prerequisite starts in `FAILED_DEPENDENCY`. This fail-fast policy prevents impossible work from remaining blocked forever.
 
 ## Circuit breaker: persisted state machine
 

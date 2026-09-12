@@ -18,8 +18,11 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayDeque;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -72,6 +75,7 @@ public class RecoveryEventLeaseService {
             attempt.finish(RecoveryAttemptOutcome.EXHAUSTED, command.reason(), command.httpStatus(), command.durationMillis(), now);
             event.exhaust(now);
             auditRepository.save(new RecoveryEventAuditEntity(UUID.randomUUID(), event.getId(), RecoveryEventState.EXHAUSTED, "Retry limit reached: " + command.reason(), now));
+            propagateDependencyFailure(event.getId(), event.getState(), now);
             return new RetryRecoveryEvent(event.getId(), event.getState(), null);
         }
         Instant nextEligibleAt = now.plus(retryDelay(event.getAttemptCount()));
@@ -88,6 +92,7 @@ public class RecoveryEventLeaseService {
         activeAttempt(event).finish(RecoveryAttemptOutcome.PERMANENT_FAILURE, command.reason(), command.httpStatus(), command.durationMillis(), now);
         event.failFinal(now);
         auditRepository.save(new RecoveryEventAuditEntity(UUID.randomUUID(), event.getId(), RecoveryEventState.FAILED_FINAL, "Permanent failure: " + command.reason(), now));
+        propagateDependencyFailure(event.getId(), event.getState(), now);
         return new FailedRecoveryEvent(event.getId(), event.getState());
     }
 
@@ -122,6 +127,34 @@ public class RecoveryEventLeaseService {
         activeAttempt(event).finish(RecoveryAttemptOutcome.LEASE_EXPIRED, "Visibility lease expired before completion.", now);
     }
 
+    private void propagateDependencyFailure(
+            UUID prerequisiteEventId,
+            RecoveryEventState prerequisiteState,
+            Instant now) {
+        ArrayDeque<FailedPrerequisite> queue = new ArrayDeque<>();
+        Set<UUID> visited = new HashSet<>();
+        queue.add(new FailedPrerequisite(prerequisiteEventId, prerequisiteState));
+
+        while (!queue.isEmpty()) {
+            FailedPrerequisite failed = queue.removeFirst();
+            dependencyRepository.findByPrerequisiteEventIdOrderByEventIdAsc(failed.eventId()).forEach(dependency -> {
+                UUID dependentId = dependency.getEventId();
+                if (!visited.add(dependentId)) return;
+                RecoveryEventEntity dependent = eventRepository.lockById(dependentId).orElseThrow();
+                if (dependent.getState() != RecoveryEventState.BLOCKED) return;
+                dependent.failDependency(now);
+                auditRepository.save(new RecoveryEventAuditEntity(
+                        UUID.randomUUID(),
+                        dependentId,
+                        RecoveryEventState.FAILED_DEPENDENCY,
+                        "Prerequisite " + failed.eventId() + " reached " + failed.state()
+                                + "; recovery cannot continue.",
+                        now));
+                queue.addLast(new FailedPrerequisite(dependentId, RecoveryEventState.FAILED_DEPENDENCY));
+            });
+        }
+    }
+
     private List<UUID> releaseIfUnblocked(UUID eventId, Instant now) {
         RecoveryEventEntity dependent = eventRepository.lockById(eventId).orElseThrow();
         if (dependent.getState() != RecoveryEventState.BLOCKED || !allPrerequisitesComplete(eventId)) return List.of();
@@ -130,6 +163,8 @@ public class RecoveryEventLeaseService {
         return List.of(eventId);
     }
 
+    private record FailedPrerequisite(UUID eventId, RecoveryEventState state) {
+    }
     private boolean allPrerequisitesComplete(UUID eventId) {
         List<RecoveryEventDependencyEntity> dependencies = dependencyRepository.findByEventIdOrderByPrerequisiteEventIdAsc(eventId);
         return !dependencies.isEmpty() && dependencies.stream().allMatch(dependency -> eventRepository.findById(dependency.getPrerequisiteEventId()).map(event -> event.getState() == RecoveryEventState.COMPLETED).orElse(false));

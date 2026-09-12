@@ -39,6 +39,7 @@ class RetryRecoveryEventTest {
     @Test
     void opensCircuitAfterThreeFailuresAndAllowsOneSuccessfulHalfOpenProbe() throws Exception {
         String eventId = create();
+        String dependentId = createDependent(eventId);
         for (int attempt = 1; attempt <= 3; attempt++) {
             org.assertj.core.api.Assertions.assertThat(claim(1).path(0).path("eventId").asText()).isEqualTo(eventId);
             mockMvc.perform(post("/api/v1/worker/claims/{eventId}/retry", eventId)
@@ -59,10 +60,14 @@ class RetryRecoveryEventTest {
                 .andExpect(jsonPath("$.attempts[0].outcome").value("TRANSIENT_FAILURE"))
                 .andExpect(jsonPath("$.attempts[1].outcome").value("TRANSIENT_FAILURE"))
                 .andExpect(jsonPath("$.attempts[2].outcome").value("EXHAUSTED"));
+        mockMvc.perform(get("/api/v1/events/{eventId}", dependentId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.state").value("FAILED_DEPENDENCY"))
+                .andExpect(jsonPath("$.audits[2].reason").value(org.hamcrest.Matchers.containsString("EXHAUSTED")));
         mockMvc.perform(get("/api/v1/circuit-breakers"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].state").value("OPEN"))
-                .andExpect(jsonPath("$[0].consecutiveFailures").value(3));
+                .andExpect(jsonPath("$[?(@.targetSystem == 'SALESFORCE')].state").value(org.hamcrest.Matchers.contains("OPEN")))
+                .andExpect(jsonPath("$[?(@.targetSystem == 'SALESFORCE')].consecutiveFailures").value(org.hamcrest.Matchers.contains(3)));
 
         String firstProbeCandidate = create();
         mockMvc.perform(post("/api/v1/worker/claims").contentType(MediaType.APPLICATION_JSON).content(claimRequest(10)))
@@ -76,7 +81,7 @@ class RetryRecoveryEventTest {
         org.assertj.core.api.Assertions.assertThat(probes.path(0).path("eventId").asText()).isEqualTo(firstProbeCandidate);
         mockMvc.perform(get("/api/v1/circuit-breakers"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].state").value("HALF_OPEN"));
+                .andExpect(jsonPath("$[?(@.targetSystem == 'SALESFORCE')].state").value(org.hamcrest.Matchers.contains("HALF_OPEN")));
 
         mockMvc.perform(post("/api/v1/worker/claims/{eventId}/complete", firstProbeCandidate)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -84,8 +89,8 @@ class RetryRecoveryEventTest {
                 .andExpect(status().isOk());
         mockMvc.perform(get("/api/v1/circuit-breakers"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].state").value("CLOSED"))
-                .andExpect(jsonPath("$[0].consecutiveFailures").value(0));
+                .andExpect(jsonPath("$[?(@.targetSystem == 'SALESFORCE')].state").value(org.hamcrest.Matchers.contains("CLOSED")))
+                .andExpect(jsonPath("$[?(@.targetSystem == 'SALESFORCE')].consecutiveFailures").value(org.hamcrest.Matchers.contains(0)));
     }
 
     private JsonNode claim(int maxEvents) throws Exception {
@@ -96,6 +101,18 @@ class RetryRecoveryEventTest {
 
     private String claimRequest(int maxEvents) {
         return "{\"workerId\":\"retry-worker\",\"maxEvents\":" + maxEvents + ",\"leaseSeconds\":60}";
+    }
+
+    private String createDependent(String prerequisiteEventId) throws Exception {
+        String response = mockMvc.perform(post("/api/v1/events").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"idempotencyKey\":\"retry-child-" + UUID.randomUUID()
+                                + "\",\"correlationId\":\"retry-order\",\"targetSystem\":\"LEGACY_WMS\","
+                                + "\"payloadReference\":\"s3://restore/retry-child.json\",\"priority\":1,"
+                                + "\"prerequisiteEventIds\":[\"" + prerequisiteEventId + "\"]}"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.state").value("BLOCKED"))
+                .andReturn().getResponse().getContentAsString();
+        return objectMapper.readTree(response).path("eventId").asText();
     }
 
     private String create() throws Exception {
