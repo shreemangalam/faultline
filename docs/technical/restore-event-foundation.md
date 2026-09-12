@@ -8,6 +8,8 @@ A worker calls `POST /api/v1/worker/claims` with a worker ID, batch size, and le
 
 Each target system has a persisted `CLOSED`, `OPEN`, or `HALF_OPEN` circuit visible at `GET /api/v1/circuit-breakers`. Three qualifying transient failures open the circuit for 30 seconds. Claims are suppressed during cooldown; after cooldown, a pessimistically locked circuit row permits one half-open probe. Probe success closes and resets the circuit, while probe failure reopens it for 60 seconds.
 
+The local downstream simulator is controlled through `PUT /api/v1/simulator/targets/{targetSystem}` and accepts deliveries at `POST /api/v1/simulator/targets/{targetSystem}/deliveries`. It returns success, `503`, `429`, delayed success, or permanent validation failure on demand. Successful deliveries deduplicate on `Idempotency-Key` and expose request versus accepted counts. Simulator controls are intentionally ephemeral test-fixture state; recovery events, attempts, and circuit health remain durable PostgreSQL state.
+
 Survey and Restore currently share the local PostgreSQL database for an easy Compose demo. Restore uses a separate Flyway history table and baselines at version `0` before applying its own migrations, which lets it migrate alongside Survey without treating Survey tables as its schema history.
 
 Run the full local stack with `docker compose -f infra/compose.yaml up --build`; Restore health is at `http://localhost:8082/actuator/health`.

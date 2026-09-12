@@ -54,3 +54,4 @@ This is a concise, versioned record of shipped engineering decisions. It is inte
 - Verified 11 focused Restore tests, the full Maven reactor, Docker migration startup, and a live PostgreSQL claim/failure/circuit-read round-trip.
 - Added durable, numbered attempt history for claims, successful completions, transient failures, exhausted retries, and expired worker leases.
 - Added the guarded `FAILED_FINAL` transition. Permanent payload failures terminate without retry and do not count against target health.
+- Added an HTTP downstream simulator with resettable success, `503`, `429`, delayed-success, and validation-failure behavior plus idempotent success receipts.
