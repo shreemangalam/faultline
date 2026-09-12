@@ -7,6 +7,7 @@ import jakarta.validation.constraints.NotNull;
 
 public record ConfigureSimulatorTargetRequest(
         @NotNull DownstreamBehavior behavior,
-        @Min(0) @Max(10_000) long delayMillis
+        @Min(0) @Max(10_000) long delayMillis,
+        boolean resetHistory
 ) {
 }

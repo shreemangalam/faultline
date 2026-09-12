@@ -69,13 +69,13 @@ public class RecoveryEventLeaseService {
         RecoveryAttemptEntity attempt = activeAttempt(event);
         circuitBreakerService.recordFailure(event.getTargetSystem(), now);
         if (event.getAttemptCount() >= 3) {
-            attempt.finish(RecoveryAttemptOutcome.EXHAUSTED, command.reason(), now);
+            attempt.finish(RecoveryAttemptOutcome.EXHAUSTED, command.reason(), command.httpStatus(), command.durationMillis(), now);
             event.exhaust(now);
             auditRepository.save(new RecoveryEventAuditEntity(UUID.randomUUID(), event.getId(), RecoveryEventState.EXHAUSTED, "Retry limit reached: " + command.reason(), now));
             return new RetryRecoveryEvent(event.getId(), event.getState(), null);
         }
         Instant nextEligibleAt = now.plus(retryDelay(event.getAttemptCount()));
-        attempt.finish(RecoveryAttemptOutcome.TRANSIENT_FAILURE, command.reason(), now);
+        attempt.finish(RecoveryAttemptOutcome.TRANSIENT_FAILURE, command.reason(), command.httpStatus(), command.durationMillis(), now);
         event.scheduleRetry(nextEligibleAt, now);
         auditRepository.save(new RecoveryEventAuditEntity(UUID.randomUUID(), event.getId(), RecoveryEventState.RETRY_SCHEDULED, command.reason(), now));
         return new RetryRecoveryEvent(event.getId(), event.getState(), nextEligibleAt);
@@ -85,7 +85,7 @@ public class RecoveryEventLeaseService {
     public FailedRecoveryEvent failFinal(FailRecoveryEventCommand command) {
         Instant now = clock.instant();
         RecoveryEventEntity event = ownedLease(command.eventId(), command.workerId(), now);
-        activeAttempt(event).finish(RecoveryAttemptOutcome.PERMANENT_FAILURE, command.reason(), now);
+        activeAttempt(event).finish(RecoveryAttemptOutcome.PERMANENT_FAILURE, command.reason(), command.httpStatus(), command.durationMillis(), now);
         event.failFinal(now);
         auditRepository.save(new RecoveryEventAuditEntity(UUID.randomUUID(), event.getId(), RecoveryEventState.FAILED_FINAL, "Permanent failure: " + command.reason(), now));
         return new FailedRecoveryEvent(event.getId(), event.getState());
@@ -95,7 +95,7 @@ public class RecoveryEventLeaseService {
     public CompletedRecoveryEvent complete(CompleteRecoveryEventCommand command) {
         Instant now = clock.instant();
         RecoveryEventEntity event = ownedLease(command.eventId(), command.workerId(), now);
-        activeAttempt(event).finish(RecoveryAttemptOutcome.SUCCEEDED, null, now);
+        activeAttempt(event).finish(RecoveryAttemptOutcome.SUCCEEDED, null, command.httpStatus(), command.durationMillis(), now);
         circuitBreakerService.recordSuccess(event.getTargetSystem(), now);
         event.complete(now);
         auditRepository.save(new RecoveryEventAuditEntity(UUID.randomUUID(), event.getId(), RecoveryEventState.COMPLETED, "Completed by worker " + command.workerId() + ".", now));

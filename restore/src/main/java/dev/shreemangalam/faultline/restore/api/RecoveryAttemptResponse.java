@@ -11,6 +11,8 @@ public record RecoveryAttemptResponse(
         String workerId,
         RecoveryAttemptOutcome outcome,
         String failureReason,
+        Integer httpStatus,
+        Long durationMillis,
         Instant startedAt,
         Instant finishedAt
 ) { }
