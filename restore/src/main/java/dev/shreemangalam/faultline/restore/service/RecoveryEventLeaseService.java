@@ -82,6 +82,16 @@ public class RecoveryEventLeaseService {
     }
 
     @Transactional
+    public FailedRecoveryEvent failFinal(FailRecoveryEventCommand command) {
+        Instant now = clock.instant();
+        RecoveryEventEntity event = ownedLease(command.eventId(), command.workerId(), now);
+        activeAttempt(event).finish(RecoveryAttemptOutcome.PERMANENT_FAILURE, command.reason(), now);
+        event.failFinal(now);
+        auditRepository.save(new RecoveryEventAuditEntity(UUID.randomUUID(), event.getId(), RecoveryEventState.FAILED_FINAL, "Permanent failure: " + command.reason(), now));
+        return new FailedRecoveryEvent(event.getId(), event.getState());
+    }
+
+    @Transactional
     public CompletedRecoveryEvent complete(CompleteRecoveryEventCommand command) {
         Instant now = clock.instant();
         RecoveryEventEntity event = ownedLease(command.eventId(), command.workerId(), now);
