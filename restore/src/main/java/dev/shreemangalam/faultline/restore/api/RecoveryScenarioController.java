@@ -35,6 +35,30 @@ public class RecoveryScenarioController {
                 events);
     }
 
+    @PostMapping("/priority-deadline")
+    @ResponseStatus(HttpStatus.CREATED)
+    public PriorityDeadlineScenarioResponse loadPriorityDeadline() {
+        var scenario = service.loadPriorityDeadline();
+        var events = scenario.events().stream()
+                .map(event -> new RankedScenarioRecoveryEventResponse(
+                        event.step(),
+                        event.eventId(),
+                        event.targetSystem(),
+                        event.state(),
+                        event.priority(),
+                        event.deadlineAt(),
+                        event.prerequisiteEventIds()))
+                .toList();
+        return new PriorityDeadlineScenarioResponse(
+                scenario.scenarioId(),
+                "PRIORITY_DEADLINE",
+                scenario.correlationId(),
+                events.size(),
+                scenario.expectedAdmissionOrder(),
+                events,
+                scenario.loadedAt());
+    }
+
     @PostMapping(path = "/thundering-herd", consumes = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
     public ThunderingHerdScenarioResponse loadThunderingHerd(

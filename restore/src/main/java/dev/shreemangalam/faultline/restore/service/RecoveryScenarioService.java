@@ -68,6 +68,38 @@ public class RecoveryScenarioService {
     }
 
     @Transactional
+    public PriorityDeadlineScenario loadPriorityDeadline() {
+        UUID scenarioId = UUID.randomUUID();
+        String correlationId = "priority-deadline-" + scenarioId;
+        String targetSystem = "ERP_PRIORITY_" + scenarioId.toString().substring(0, 8).toUpperCase(Locale.ROOT);
+        Instant now = clock.instant();
+        Instant commonDeadline = now.plusSeconds(3_600);
+        List<RankedScenarioRecoveryEvent> events = new ArrayList<>();
+
+        submitRanked(events, scenarioId, correlationId, "BACKLOG_CLEANUP", targetSystem, 4,
+                now.plusSeconds(300), List.of());
+        submitRanked(events, scenarioId, correlationId, "STANDARD_ORDER", targetSystem, 2,
+                commonDeadline, List.of());
+        UUID fanoutRelease = submitRanked(events, scenarioId, correlationId, "FANOUT_RELEASE", targetSystem, 2,
+                commonDeadline, List.of());
+        submitRanked(events, scenarioId, correlationId, "INVENTORY_BRANCH", targetSystem, 5,
+                null, List.of(fanoutRelease));
+        submitRanked(events, scenarioId, correlationId, "SHIPPING_BRANCH", targetSystem, 5,
+                null, List.of(fanoutRelease));
+        submitRanked(events, scenarioId, correlationId, "SLA_RISK", targetSystem, 2,
+                now.plusSeconds(900), List.of());
+        submitRanked(events, scenarioId, correlationId, "CUSTOMER_ESCALATION", targetSystem, 1,
+                now.plusSeconds(7_200), List.of());
+
+        return new PriorityDeadlineScenario(
+                scenarioId,
+                correlationId,
+                List.copyOf(events),
+                List.of("CUSTOMER_ESCALATION", "SLA_RISK", "FANOUT_RELEASE", "STANDARD_ORDER", "BACKLOG_CLEANUP"),
+                now);
+    }
+
+    @Transactional
     public ThunderingHerdScenario loadThunderingHerd(int eventCount) {
         UUID scenarioId = UUID.randomUUID();
         String correlationId = "thundering-herd-" + scenarioId;
@@ -119,6 +151,35 @@ public class RecoveryScenarioService {
                 RecoveryEventState.ELIGIBLE,
                 DownstreamBehavior.TEMPORARY_UNAVAILABLE,
                 now);
+    }
+
+    private UUID submitRanked(
+            List<RankedScenarioRecoveryEvent> events,
+            UUID scenarioId,
+            String correlationId,
+            String step,
+            String targetSystem,
+            int priority,
+            Instant deadlineAt,
+            List<UUID> prerequisites) {
+        var submission = eventService.submit(new CreateRecoveryEventCommand(
+                "priority-" + scenarioId + "-" + step.toLowerCase(Locale.ROOT).replace('_', '-'),
+                correlationId,
+                targetSystem,
+                "scenario://priority-deadline/" + step.toLowerCase(Locale.ROOT).replace('_', '-'),
+                priority,
+                deadlineAt,
+                prerequisites));
+        var event = submission.details().event();
+        events.add(new RankedScenarioRecoveryEvent(
+                step,
+                event.getId(),
+                event.getTargetSystem(),
+                event.getState(),
+                event.getPriority(),
+                event.getDeadlineAt(),
+                prerequisites));
+        return event.getId();
     }
 
     private UUID submit(

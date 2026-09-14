@@ -83,3 +83,8 @@ This is a concise, versioned record of shipped engineering decisions. It is inte
 
 - Added blocked direct-dependant count to claim ranking and proved priority, deadline, fan-out, and prior-attempt ordering through the HTTP worker path.
 - Documented at-least-once delivery with explicit dependency partial order. Independent branches have no FIFO or completion-order guarantee and may run concurrently.
+
+## 2026-09-14 — Restore priority and deadline scenario
+
+- Added a repeatable seven-event scenario whose response declares the expected admission order and exposes each ranking input.
+- Proved through the HTTP claim path that five eligible events are ranked independently of creation order while two dependency children remain blocked.

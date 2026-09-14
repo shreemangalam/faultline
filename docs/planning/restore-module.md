@@ -116,6 +116,7 @@ The dashboard will display event-status counts, attempt history, circuit state, 
 | `POST /api/v1/worker/run-once` | Claim and execute one bounded recovery batch. |
 | `PUT /api/v1/simulator/targets/{targetSystem}` | Configure a repeatable downstream behavior. |
 | `POST /api/v1/scenarios/dependency-cascade` | Load the dependency demo. |
+| `POST /api/v1/scenarios/priority-deadline` | Load the deterministic admission-order demo. |
 | `POST /api/v1/scenarios/thundering-herd` | Load the controlled outage demo. |
 | `GET /api/v1/circuit-breakers` | Inspect all target-health states. |
 | `GET /api/v1/statistics` | Return operational aggregates for the dashboard. |
