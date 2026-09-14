@@ -59,3 +59,9 @@ This is a concise, versioned record of shipped engineering decisions. It is inte
 - Verified the slice with 20 focused Restore tests, the full 42-test reactor, a rebuilt container/Flyway V6, and one isolated live PostgreSQL-backed successful delivery.
 - Added fail-fast, transitive `FAILED_DEPENDENCY` propagation so terminal prerequisites cannot strand current or newly submitted dependant events.
 - Verified with 21 focused Restore tests, the full 43-test reactor, a rebuilt container, and an isolated live PostgreSQL dependency chain.
+
+## 2026-09-14 — Restore automatic scheduling
+
+- Added opt-in fixed-delay batch execution with validated worker settings, overlap suppression, and failed-tick isolation.
+- Proved automatic completion through a real embedded HTTP server and kept the manual worker endpoint on the same executor.
+- Verified 27 focused Restore tests, the full 49-test reactor, a rebuilt Java 21 container, and an unchanged 21-event local PostgreSQL snapshot.

@@ -19,6 +19,13 @@ server:
   port: ${PORT:8082}
 
 restore:
+  worker:
+    enabled: ${RESTORE_WORKER_ENABLED:false}
+    id: ${RESTORE_WORKER_ID:restore-worker}
+    batch-size: ${RESTORE_WORKER_BATCH_SIZE:5}
+    lease-seconds: ${RESTORE_WORKER_LEASE_SECONDS:60}
+    fixed-delay: ${RESTORE_WORKER_FIXED_DELAY:1s}
+    initial-delay: ${RESTORE_WORKER_INITIAL_DELAY:1s}
   downstream:
     base-url: ${RESTORE_DOWNSTREAM_BASE_URL:}
     connect-timeout: ${RESTORE_DOWNSTREAM_CONNECT_TIMEOUT:1s}

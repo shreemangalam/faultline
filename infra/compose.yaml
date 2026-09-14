@@ -35,6 +35,12 @@ services:
       RESTORE_DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-faultline}
       POSTGRES_USER: ${POSTGRES_USER:-faultline}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me-locally}
+      RESTORE_WORKER_ENABLED: ${RESTORE_WORKER_ENABLED:-false}
+      RESTORE_WORKER_ID: ${RESTORE_WORKER_ID:-restore-compose-worker}
+      RESTORE_WORKER_BATCH_SIZE: ${RESTORE_WORKER_BATCH_SIZE:-5}
+      RESTORE_WORKER_LEASE_SECONDS: ${RESTORE_WORKER_LEASE_SECONDS:-60}
+      RESTORE_WORKER_FIXED_DELAY: ${RESTORE_WORKER_FIXED_DELAY:-1s}
+      RESTORE_WORKER_INITIAL_DELAY: ${RESTORE_WORKER_INITIAL_DELAY:-1s}
     depends_on:
       postgres:
         condition: service_healthy

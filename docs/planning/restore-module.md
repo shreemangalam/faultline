@@ -30,7 +30,7 @@ BLOCKED         -> FAILED_DEPENDENCY  (a prerequisite cannot complete)
 
 PostgreSQL is the authoritative store. It contains event state, retry timestamps, attempt records, dependency relations, circuit-breaker state, and audit entries. This means a process restart cannot lose queued work.
 
-A worker run claims a small batch of eligible records whose retry time has arrived. Worker claims use PostgreSQL `FOR UPDATE SKIP LOCKED` inside a short transaction, so two workers cannot claim the same event. This is more robust than relying only on an in-memory `PriorityBlockingQueue`. The current API triggers one bounded run explicitly; periodic scheduling remains a later operational layer.
+A worker run claims a small batch of eligible records whose retry time has arrived. Worker claims use PostgreSQL `FOR UPDATE SKIP LOCKED` inside a short transaction, so two workers cannot claim the same event. This is more robust than relying only on an in-memory `PriorityBlockingQueue`. The manual API and opt-in fixed-delay scheduler invoke the same bounded executor; scheduling is disabled unless the process is explicitly assigned worker responsibility.
 
 An in-memory queue can later improve local ordering, but it is an optimisation, never a durability mechanism.
 
