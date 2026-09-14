@@ -100,6 +100,47 @@ public class RecoveryScenarioService {
     }
 
     @Transactional
+    public TerminalFailureScenario loadTerminalFailures() {
+        UUID scenarioId = UUID.randomUUID();
+        String correlationId = "terminal-failures-" + scenarioId;
+        String targetSuffix = scenarioId.toString().substring(0, 8).toUpperCase(Locale.ROOT);
+        String permanentFailureTarget = "CRM_INVALID_" + targetSuffix;
+        String retryExhaustionTarget = "ERP_UNAVAILABLE_" + targetSuffix;
+        Instant now = clock.instant();
+        List<ScenarioRecoveryEvent> events = new ArrayList<>();
+
+        simulatorService.configure(permanentFailureTarget, DownstreamBehavior.VALIDATION_FAILURE, 0, true);
+        simulatorService.configure(retryExhaustionTarget, DownstreamBehavior.TEMPORARY_UNAVAILABLE, 0, true);
+
+        UUID invalidCustomerUpdate = submitTerminal(
+                events, scenarioId, correlationId, "INVALID_CUSTOMER_UPDATE", permanentFailureTarget, 1, List.of());
+        submitTerminal(
+                events, scenarioId, correlationId, "CUSTOMER_REVIEW", "OPERATIONS_" + targetSuffix, 1,
+                List.of(invalidCustomerUpdate));
+        UUID stuckOrderReplay = submitTerminal(
+                events, scenarioId, correlationId, "STUCK_ORDER_REPLAY", retryExhaustionTarget, 2, List.of());
+        UUID orderReconciliation = submitTerminal(
+                events, scenarioId, correlationId, "ORDER_RECONCILIATION", "ERP_RECON_" + targetSuffix, 2,
+                List.of(stuckOrderReplay));
+        submitTerminal(
+                events, scenarioId, correlationId, "CUSTOMER_NOTIFICATION", "NOTIFICATIONS_" + targetSuffix, 2,
+                List.of(orderReconciliation));
+
+        return new TerminalFailureScenario(
+                scenarioId,
+                correlationId,
+                List.of(
+                        new TerminalFailurePath(
+                                "POISON_MESSAGE", permanentFailureTarget, DownstreamBehavior.VALIDATION_FAILURE,
+                                RecoveryEventState.FAILED_FINAL, 1),
+                        new TerminalFailurePath(
+                                "RETRY_EXHAUSTION", retryExhaustionTarget, DownstreamBehavior.TEMPORARY_UNAVAILABLE,
+                                RecoveryEventState.EXHAUSTED, 3)),
+                List.copyOf(events),
+                now);
+    }
+
+    @Transactional
     public ThunderingHerdScenario loadThunderingHerd(int eventCount) {
         UUID scenarioId = UUID.randomUUID();
         String correlationId = "thundering-herd-" + scenarioId;
@@ -179,6 +220,28 @@ public class RecoveryScenarioService {
                 event.getPriority(),
                 event.getDeadlineAt(),
                 prerequisites));
+        return event.getId();
+    }
+
+    private UUID submitTerminal(
+            List<ScenarioRecoveryEvent> events,
+            UUID scenarioId,
+            String correlationId,
+            String step,
+            String targetSystem,
+            int priority,
+            List<UUID> prerequisites) {
+        var submission = eventService.submit(new CreateRecoveryEventCommand(
+                "terminal-" + scenarioId + "-" + step.toLowerCase(Locale.ROOT).replace('_', '-'),
+                correlationId,
+                targetSystem,
+                "scenario://terminal-failures/" + step.toLowerCase(Locale.ROOT).replace('_', '-'),
+                priority,
+                null,
+                prerequisites));
+        var event = submission.details().event();
+        events.add(new ScenarioRecoveryEvent(
+                step, event.getId(), event.getTargetSystem(), event.getState(), prerequisites));
         return event.getId();
     }
 
