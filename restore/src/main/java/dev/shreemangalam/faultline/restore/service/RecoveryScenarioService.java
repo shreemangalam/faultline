@@ -1,8 +1,16 @@
 package dev.shreemangalam.faultline.restore.service;
 
+import dev.shreemangalam.faultline.restore.domain.RecoveryEventState;
+import dev.shreemangalam.faultline.restore.persistence.RecoveryEventAuditEntity;
+import dev.shreemangalam.faultline.restore.persistence.RecoveryEventEntity;
+import dev.shreemangalam.faultline.restore.simulator.DownstreamBehavior;
+import dev.shreemangalam.faultline.restore.simulator.DownstreamSimulatorService;
+import jakarta.persistence.EntityManager;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -10,10 +18,25 @@ import java.util.UUID;
 
 @Service
 public class RecoveryScenarioService {
-    private final RecoveryEventService eventService;
+    private static final int PERSISTENCE_BATCH_SIZE = 500;
 
-    public RecoveryScenarioService(RecoveryEventService eventService) {
+    private final RecoveryEventService eventService;
+    private final CircuitBreakerService circuitBreakerService;
+    private final DownstreamSimulatorService simulatorService;
+    private final EntityManager entityManager;
+    private final Clock clock;
+
+    public RecoveryScenarioService(
+            RecoveryEventService eventService,
+            CircuitBreakerService circuitBreakerService,
+            DownstreamSimulatorService simulatorService,
+            EntityManager entityManager,
+            Clock clock) {
         this.eventService = eventService;
+        this.circuitBreakerService = circuitBreakerService;
+        this.simulatorService = simulatorService;
+        this.entityManager = entityManager;
+        this.clock = clock;
     }
 
     @Transactional
@@ -42,6 +65,60 @@ public class RecoveryScenarioService {
                 List.of(paymentCaptured, shipmentScheduled));
 
         return new DependencyCascadeScenario(scenarioId, correlationId, List.copyOf(events));
+    }
+
+    @Transactional
+    public ThunderingHerdScenario loadThunderingHerd(int eventCount) {
+        UUID scenarioId = UUID.randomUUID();
+        String correlationId = "thundering-herd-" + scenarioId;
+        String targetSystem = "OUTAGE_" + scenarioId.toString().substring(0, 8).toUpperCase(Locale.ROOT);
+        Instant now = clock.instant();
+        simulatorService.configure(targetSystem, DownstreamBehavior.TEMPORARY_UNAVAILABLE, 0, true);
+        circuitBreakerService.ensureExists(targetSystem, now);
+
+        for (int index = 0; index < eventCount; index++) {
+            String eventKey = "herd-" + scenarioId + "-" + index;
+            var command = new CreateRecoveryEventCommand(
+                    eventKey,
+                    correlationId,
+                    targetSystem,
+                    "scenario://thundering-herd/" + index,
+                    1,
+                    null,
+                    List.of());
+            RecoveryEventEntity event = RecoveryEventEntity.receive(
+                    UUID.randomUUID(),
+                    eventKey,
+                    RecoveryEventFingerprint.calculate(command),
+                    correlationId,
+                    targetSystem,
+                    command.payloadReference(),
+                    command.priority(),
+                    null,
+                    RecoveryEventState.ELIGIBLE,
+                    now);
+            entityManager.persist(event);
+            entityManager.persist(new RecoveryEventAuditEntity(
+                    UUID.randomUUID(), event.getId(), RecoveryEventState.RECEIVED,
+                    "Event accepted for recovery.", now));
+            entityManager.persist(new RecoveryEventAuditEntity(
+                    UUID.randomUUID(), event.getId(), RecoveryEventState.ELIGIBLE,
+                    "No incomplete prerequisites are registered.", now));
+
+            if ((index + 1) % PERSISTENCE_BATCH_SIZE == 0 || index + 1 == eventCount) {
+                entityManager.flush();
+                entityManager.clear();
+            }
+        }
+
+        return new ThunderingHerdScenario(
+                scenarioId,
+                correlationId,
+                targetSystem,
+                eventCount,
+                RecoveryEventState.ELIGIBLE,
+                DownstreamBehavior.TEMPORARY_UNAVAILABLE,
+                now);
     }
 
     private UUID submit(

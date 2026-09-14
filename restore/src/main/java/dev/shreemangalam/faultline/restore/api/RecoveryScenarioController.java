@@ -1,9 +1,11 @@
 package dev.shreemangalam.faultline.restore.api;
 
 import dev.shreemangalam.faultline.restore.service.RecoveryScenarioService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
@@ -31,5 +33,21 @@ public class RecoveryScenarioController {
                 scenario.correlationId(),
                 events.size(),
                 events);
+    }
+
+    @PostMapping(path = "/thundering-herd", consumes = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseStatus(HttpStatus.CREATED)
+    public ThunderingHerdScenarioResponse loadThunderingHerd(
+            @Valid @RequestBody ThunderingHerdScenarioRequest request) {
+        var scenario = service.loadThunderingHerd(request.eventCount());
+        return new ThunderingHerdScenarioResponse(
+                scenario.scenarioId(),
+                "THUNDERING_HERD",
+                scenario.correlationId(),
+                scenario.targetSystem(),
+                scenario.eventCount(),
+                scenario.state(),
+                scenario.downstreamBehavior(),
+                scenario.loadedAt());
     }
 }
