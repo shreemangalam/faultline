@@ -71,6 +71,8 @@ For a transient error, the next eligibility time is calculated with capped expon
 delay = min(maxDelay, baseDelay * 2^attempt) + random(0, jitterWindow)
 ```
 
+With the current three-attempt limit, the first two failures schedule 5s and 10s base delays; the third failure becomes `EXHAUSTED`. The policy adds a configurable inclusive 0–2 second jitter window and continues with 20s, 40s, then a 60s cap if the attempt limit is extended.
+
 Jitter spreads retries from events that failed at the same time, avoiding a thundering herd.
 
 Among events ready for work, ranking is deterministic and documented:

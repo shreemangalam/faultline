@@ -65,3 +65,9 @@ This is a concise, versioned record of shipped engineering decisions. It is inte
 - Added opt-in fixed-delay batch execution with validated worker settings, overlap suppression, and failed-tick isolation.
 - Proved automatic completion through a real embedded HTTP server and kept the manual worker endpoint on the same executor.
 - Verified 27 focused Restore tests, the full 49-test reactor, a rebuilt Java 21 container, and an unchanged 21-event local PostgreSQL snapshot.
+
+## 2026-09-14 — Restore retry jitter
+
+- Added capped exponential backoff with a configurable inclusive jitter window and an injectable production random source.
+- Proved policy boundaries and the exact persisted delay with deterministic tests.
+- Verified 32 focused Restore tests, the full 54-test reactor, and a live PostgreSQL-backed 5,028 ms retry after one simulated `503`.

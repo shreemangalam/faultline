@@ -33,14 +33,23 @@ public class RecoveryEventLeaseService {
     private final RecoveryAttemptRepository attemptRepository;
     private final Clock clock;
     private final CircuitBreakerService circuitBreakerService;
+    private final RetryBackoffPolicy retryBackoffPolicy;
 
-    public RecoveryEventLeaseService(RecoveryEventRepository eventRepository, RecoveryEventAuditRepository auditRepository, RecoveryEventDependencyRepository dependencyRepository, RecoveryAttemptRepository attemptRepository, Clock clock, CircuitBreakerService circuitBreakerService) {
+    public RecoveryEventLeaseService(
+            RecoveryEventRepository eventRepository,
+            RecoveryEventAuditRepository auditRepository,
+            RecoveryEventDependencyRepository dependencyRepository,
+            RecoveryAttemptRepository attemptRepository,
+            Clock clock,
+            CircuitBreakerService circuitBreakerService,
+            RetryBackoffPolicy retryBackoffPolicy) {
         this.eventRepository = eventRepository;
         this.auditRepository = auditRepository;
         this.dependencyRepository = dependencyRepository;
         this.attemptRepository = attemptRepository;
         this.clock = clock;
         this.circuitBreakerService = circuitBreakerService;
+        this.retryBackoffPolicy = retryBackoffPolicy;
     }
 
     @Transactional
@@ -78,7 +87,7 @@ public class RecoveryEventLeaseService {
             propagateDependencyFailure(event.getId(), event.getState(), now);
             return new RetryRecoveryEvent(event.getId(), event.getState(), null);
         }
-        Instant nextEligibleAt = now.plus(retryDelay(event.getAttemptCount()));
+        Instant nextEligibleAt = now.plus(retryBackoffPolicy.delayForAttempt(event.getAttemptCount()));
         attempt.finish(RecoveryAttemptOutcome.TRANSIENT_FAILURE, command.reason(), command.httpStatus(), command.durationMillis(), now);
         event.scheduleRetry(nextEligibleAt, now);
         auditRepository.save(new RecoveryEventAuditEntity(UUID.randomUUID(), event.getId(), RecoveryEventState.RETRY_SCHEDULED, command.reason(), now));
@@ -114,8 +123,6 @@ public class RecoveryEventLeaseService {
         if (event.getLeaseExpiresAt() == null || !event.getLeaseExpiresAt().isAfter(now)) throw new ResponseStatusException(HttpStatus.CONFLICT, "Recovery event lease has expired.");
         return event;
     }
-
-    private Duration retryDelay(int attemptCount) { return Duration.ofSeconds(Math.min(60, 5L * (1L << Math.max(0, attemptCount - 1)))); }
 
     private RecoveryAttemptEntity activeAttempt(RecoveryEventEntity event) {
         return attemptRepository.findByEventIdAndFinishedAtIsNull(event.getId())

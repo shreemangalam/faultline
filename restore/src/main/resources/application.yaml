@@ -26,6 +26,8 @@ restore:
     lease-seconds: ${RESTORE_WORKER_LEASE_SECONDS:60}
     fixed-delay: ${RESTORE_WORKER_FIXED_DELAY:1s}
     initial-delay: ${RESTORE_WORKER_INITIAL_DELAY:1s}
+  retry:
+    jitter-window: ${RESTORE_RETRY_JITTER_WINDOW:2s}
   downstream:
     base-url: ${RESTORE_DOWNSTREAM_BASE_URL:}
     connect-timeout: ${RESTORE_DOWNSTREAM_CONNECT_TIMEOUT:1s}
