@@ -1,0 +1,16 @@
+{
+  "verifiedAt": "2026-09-14T17:55:04.2607911+00:00",
+  "eventCount": 50000,
+  "parallelWorkers": 8,
+  "loadDurationMillis": 7916,
+  "endToEndRecoveryDurationMillis": 272245,
+  "drainDurationMillis": 242190,
+  "drainRatePerSecond": 206.45,
+  "p95ReceiptToSuccessMillis": 272041,
+  "outageAttempts": 10,
+  "totalAttempts": 50010,
+  "acceptedDeliveries": 50000,
+  "pendingEvents": 0,
+  "terminalFailures": 0,
+  "finalCircuitState": "CLOSED"
+}

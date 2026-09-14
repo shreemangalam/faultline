@@ -17,7 +17,7 @@ It contains two linked backend modules and one operator dashboard:
 
 ## Status
 
-Survey is a complete, containerised impact-analysis module. Restore now has durable event intake, dependency-aware release and terminal-failure propagation, worker leases, bounded retries with jittered exponential backoff, persisted target circuits, queryable attempt history and aggregate statistics, a controllable downstream simulator, timeout-bound HTTP execution, opt-in automatic batch scheduling, and repeatable dependency-cascade and bounded thundering-herd scenarios; benchmark measurement, additional scenarios, and streaming updates are next. The public design baseline is available in [`docs/planning`](docs/planning).
+Survey is a complete, containerised impact-analysis module. Restore now has durable event intake, dependency-aware release and terminal-failure propagation, worker leases, bounded retries with jittered exponential backoff, persisted target circuits, queryable attempt history and aggregate statistics, a controllable downstream simulator, timeout-bound HTTP execution, opt-in automatic batch scheduling, repeatable scenarios, and an assertion-driven 50,000-event recovery benchmark. Priority/deadline and terminal-failure scenarios plus streaming updates are next. The public design baseline is available in [`docs/planning`](docs/planning).
 
 No real SAP, CPI, Salesforce, customer data, or credentials are used. All demo systems and payloads are fictional and run locally.
 
@@ -26,6 +26,7 @@ No real SAP, CPI, Salesforce, customer data, or credentials are used. All demo s
 - [Suite overview and delivery plan](docs/planning/suite-overview.md)
 - [Survey module design](docs/planning/survey-module.md)
 - [Restore module design](docs/planning/restore-module.md)
+- [Restore 50,000-event benchmark](docs/technical/restore-recovery-benchmark.md)
 
 ## Local development policy
 
@@ -42,3 +43,5 @@ docker compose -f infra/compose.yaml up --build
 ```
 
 Open the operator dashboard at `http://localhost:3000`. The Survey API listens on `http://localhost:8081`; its versioned contract is [here](docs/api/survey-openapi.json). Restore listens on `http://localhost:8082` and persists recovery events locally. Automatic Restore delivery is disabled by default; set `RESTORE_WORKER_ENABLED=true` only when that process should execute eligible queue data.
+
+Run the isolated recovery benchmark with `./scripts/benchmark-restore.ps1`. It defaults to 50,000 events and removes its dedicated containers and database volume after verification.

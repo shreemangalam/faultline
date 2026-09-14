@@ -1,0 +1,33 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: faultline_benchmark
+      POSTGRES_USER: faultline
+      POSTGRES_PASSWORD: benchmark-only
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U faultline -d faultline_benchmark"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    volumes:
+      - benchmark-postgres-data:/var/lib/postgresql/data
+
+  restore:
+    build:
+      context: ..
+      dockerfile: restore/Dockerfile
+    environment:
+      RESTORE_DB_URL: jdbc:postgresql://postgres:5432/faultline_benchmark
+      POSTGRES_USER: faultline
+      POSTGRES_PASSWORD: benchmark-only
+      RESTORE_WORKER_ENABLED: "false"
+      RESTORE_RETRY_JITTER_WINDOW: 0s
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "${RESTORE_BENCHMARK_PORT:-18082}:8082"
+
+volumes:
+  benchmark-postgres-data:
