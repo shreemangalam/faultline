@@ -12,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -69,6 +70,47 @@ class RecoveryScenarioControllerTest {
         assertThat(statistics.path("attemptCounts").path("SUCCEEDED").asLong()).isEqualTo(6);
     }
 
+    @Test
+    void loadsPriorityDeadlineScenarioInItsDeclaredAdmissionOrder() throws Exception {
+        ResponseEntity<String> loadedResponse = restTemplate.postForEntity(
+                "/api/v1/scenarios/priority-deadline", null, String.class);
+        JsonNode loaded = objectMapper.readTree(loadedResponse.getBody());
+
+        assertThat(loadedResponse.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        assertThat(loaded.path("scenario").asText()).isEqualTo("PRIORITY_DEADLINE");
+        assertThat(loaded.path("eventCount").asInt()).isEqualTo(7);
+        assertThat(loaded.path("events")).hasSize(7);
+        assertThat(steps(loaded.path("events"))).containsExactly(
+                "BACKLOG_CLEANUP",
+                "STANDARD_ORDER",
+                "FANOUT_RELEASE",
+                "INVENTORY_BRANCH",
+                "SHIPPING_BRANCH",
+                "SLA_RISK",
+                "CUSTOMER_ESCALATION");
+        assertThat(states(loaded.path("events"))).containsExactly(
+                "ELIGIBLE", "ELIGIBLE", "ELIGIBLE", "BLOCKED", "BLOCKED", "ELIGIBLE", "ELIGIBLE");
+        assertThat(textValues(loaded.path("expectedAdmissionOrder"))).containsExactly(
+                "CUSTOMER_ESCALATION", "SLA_RISK", "FANOUT_RELEASE", "STANDARD_ORDER", "BACKLOG_CLEANUP");
+
+        Map<String, String> eventIdsByStep = new HashMap<>();
+        loaded.path("events").forEach(event -> eventIdsByStep.put(
+                event.path("step").asText(), event.path("eventId").asText()));
+        JsonNode claimed = objectMapper.readTree(restTemplate.postForObject(
+                "/api/v1/worker/claims",
+                Map.of("workerId", "priority-scenario-worker", "maxEvents", 10, "leaseSeconds", 30),
+                String.class));
+        List<String> claimedIds = new ArrayList<>();
+        claimed.forEach(event -> claimedIds.add(event.path("eventId").asText()));
+
+        assertThat(claimedIds).containsExactly(
+                eventIdsByStep.get("CUSTOMER_ESCALATION"),
+                eventIdsByStep.get("SLA_RISK"),
+                eventIdsByStep.get("FANOUT_RELEASE"),
+                eventIdsByStep.get("STANDARD_ORDER"),
+                eventIdsByStep.get("BACKLOG_CLEANUP"));
+    }
+
     private JsonNode runOnce() throws Exception {
         ResponseEntity<String> response = restTemplate.postForEntity(
                 "/api/v1/worker/run-once",
@@ -86,6 +128,12 @@ class RecoveryScenarioControllerTest {
         List<String> states = new ArrayList<>();
         events.forEach(event -> states.add(event.path("state").asText()));
         return states;
+    }
+
+    private List<String> textValues(JsonNode values) {
+        List<String> textValues = new ArrayList<>();
+        values.forEach(value -> textValues.add(value.asText()));
+        return textValues;
     }
 
     private List<String> steps(JsonNode events) {
