@@ -117,6 +117,7 @@ The dashboard will display event-status counts, attempt history, circuit state, 
 | `PUT /api/v1/simulator/targets/{targetSystem}` | Configure a repeatable downstream behavior. |
 | `POST /api/v1/scenarios/dependency-cascade` | Load the dependency demo. |
 | `POST /api/v1/scenarios/priority-deadline` | Load the deterministic admission-order demo. |
+| `POST /api/v1/scenarios/terminal-failures` | Load permanent-rejection and retry-exhaustion paths. |
 | `POST /api/v1/scenarios/thundering-herd` | Load the controlled outage demo. |
 | `GET /api/v1/circuit-breakers` | Inspect all target-health states. |
 | `GET /api/v1/statistics` | Return operational aggregates for the dashboard. |
@@ -131,7 +132,7 @@ The screen has four connected parts:
 - a target-system panel showing each circuit as closed, open, or half-open;
 - a retry queue table with priority, next attempt time, dependency status, and reason for blocking;
 - an event timeline showing state transitions and HTTP outcomes for one correlation ID;
-- scenario controls that run the controlled dependency-cascade and thundering-herd demonstrations.
+- scenario controls that run dependency, ordering, outage, and terminal-failure demonstrations.
 
 The UI never decides whether an event may retry. It renders the backend’s reason and state. This is important: policy remains testable and authoritative in Java instead of being accidentally duplicated in browser code.
 

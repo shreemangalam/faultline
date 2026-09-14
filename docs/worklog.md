@@ -88,3 +88,8 @@ This is a concise, versioned record of shipped engineering decisions. It is inte
 
 - Added a repeatable seven-event scenario whose response declares the expected admission order and exposes each ranking input.
 - Proved through the HTTP claim path that five eligible events are ranked independently of creation order while two dependency children remain blocked.
+
+## 2026-09-15 — Restore terminal-failure scenario
+
+- Added deterministic poison-message and retry-exhaustion paths backed by the real downstream simulator and executor.
+- Proved bounded attempts, queryable dead-letter states, circuit semantics, and direct plus transitive dependency-failure propagation.

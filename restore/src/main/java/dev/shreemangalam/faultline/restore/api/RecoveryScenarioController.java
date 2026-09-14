@@ -59,6 +59,32 @@ public class RecoveryScenarioController {
                 scenario.loadedAt());
     }
 
+    @PostMapping("/terminal-failures")
+    @ResponseStatus(HttpStatus.CREATED)
+    public TerminalFailureScenarioResponse loadTerminalFailures() {
+        var scenario = service.loadTerminalFailures();
+        var paths = scenario.failurePaths().stream()
+                .map(path -> new TerminalFailurePathResponse(
+                        path.path(),
+                        path.targetSystem(),
+                        path.downstreamBehavior(),
+                        path.expectedTerminalState(),
+                        path.expectedAttempts()))
+                .toList();
+        var events = scenario.events().stream()
+                .map(event -> new ScenarioRecoveryEventResponse(
+                        event.step(), event.eventId(), event.targetSystem(), event.state(), event.prerequisiteEventIds()))
+                .toList();
+        return new TerminalFailureScenarioResponse(
+                scenario.scenarioId(),
+                "TERMINAL_FAILURES",
+                scenario.correlationId(),
+                events.size(),
+                paths,
+                events,
+                scenario.loadedAt());
+    }
+
     @PostMapping(path = "/thundering-herd", consumes = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
     public ThunderingHerdScenarioResponse loadThunderingHerd(
