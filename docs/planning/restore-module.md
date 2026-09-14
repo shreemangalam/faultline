@@ -93,7 +93,7 @@ A local HTTP simulator plays the role of Salesforce, WMS, or another downstream 
 
 An integration test covers the ambiguous-outcome case: the client times out, the downstream later commits, and a replay receives duplicate-success without producing a second accepted side effect.
 
-The suite will ship these repeatable scenario controls:
+The suite exposes these repeatable scenario controls:
 
 | Scenario | What it proves |
 |---|---|
@@ -101,6 +101,8 @@ The suite will ship these repeatable scenario controls:
 | Thundering herd | Up to 50,000 temporary failures exercise bounded batches, circuit protection, jitter, and measured recovery. |
 | Priority and deadline | High-value, time-sensitive work is selected before lower-priority work. |
 | Terminal failure | Non-retriable and exhausted events are recorded clearly, without an infinite retry loop. |
+
+The isolated benchmark harness has verified 50,000 events with exact attempt and accepted-delivery accounting. Its method, measured p95, throughput, and limitations are recorded in [docs/technical/restore-recovery-benchmark.md](../technical/restore-recovery-benchmark.md).
 
 The dashboard will display event-status counts, attempt history, circuit state, queue depth, processing rate, success/failure rate, and an event timeline. Data comes from the application’s local database and metrics endpoint, not fabricated screenshots. The statistics contract zero-fills every event and attempt state, defines pending depth as all non-terminal events, and reports nearest-rank p95 receipt-to-success latency.
 

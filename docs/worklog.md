@@ -71,3 +71,10 @@ This is a concise, versioned record of shipped engineering decisions. It is inte
 - Added capped exponential backoff with a configurable inclusive jitter window and an injectable production random source.
 - Proved policy boundaries and the exact persisted delay with deterministic tests.
 - Verified 32 focused Restore tests, the full 54-test reactor, and a live PostgreSQL-backed 5,028 ms retry after one simulated `503`.
+
+## 2026-09-14 — Restore observability and recovery scenarios
+
+- Added zero-filled queue/attempt statistics with nearest-rank p95 receipt-to-success latency.
+- Added repeatable dependency-cascade and bounded thundering-herd loaders using production intake rules.
+- Added an isolated, assertion-driven benchmark harness. A 50,000-event run completed with 50,010 attempts, 50,000 accepted deliveries, zero pending or terminal events, a 206.45 events/s active drain rate, and a 272.041 s p95 including circuit cool-down.
+- Kept the development database intact and removed the benchmark-only containers and volume after verification.

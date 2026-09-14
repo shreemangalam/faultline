@@ -73,12 +73,12 @@ Survey can supply an operator with the recovery context; Restore carries out mes
 
 ### Scenario C — downstream thundering herd
 
-1. Inject 100 events against the local Salesforce simulator.
-2. Simulate repeated `503 Service Unavailable` responses.
-3. Observe the circuit open, then eventually permit exactly one half-open probe.
-4. Watch retries spread by exponential backoff with jitter after the probe succeeds, rather than stampeding the recovered target.
+1. Inject up to 50,000 events against an isolated local simulator target.
+2. Send one bounded batch into repeated `503 Service Unavailable` responses and verify that the open circuit blocks the next claim.
+3. Restore the target and observe exactly one half-open probe before parallel bounded recovery resumes.
+4. Measure load time, active drain rate, end-to-end recovery time, and p95 receipt-to-success latency while asserting exact attempts and accepted side effects.
 
-## 6. Technical shape (planned, not yet implemented)
+## 6. Technical shape
 
 **Language and platform:** Java 21 with Spring Boot 3. This is a deliberate fit for SAP-adjacent enterprise backends: type safety, mature testing, straightforward concurrency primitives, excellent PostgreSQL support, and familiar production conventions.
 
