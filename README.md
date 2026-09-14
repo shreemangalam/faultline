@@ -27,6 +27,7 @@ No real SAP, CPI, Salesforce, customer data, or credentials are used. All demo s
 - [Survey module design](docs/planning/survey-module.md)
 - [Restore module design](docs/planning/restore-module.md)
 - [Restore 50,000-event benchmark](docs/technical/restore-recovery-benchmark.md)
+- [Restore delivery and ordering contract](docs/technical/restore-delivery-ordering.md)
 
 ## Local development policy
 

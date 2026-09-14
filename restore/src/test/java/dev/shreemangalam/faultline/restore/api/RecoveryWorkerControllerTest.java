@@ -66,6 +66,31 @@ class RecoveryWorkerControllerTest {
     }
 
     @Test
+    void ranksClaimsByPriorityDeadlineBlockedDependantsAndAttemptCost() throws Exception {
+        Instant commonDeadline = Instant.now().plusSeconds(3_600);
+        String urgent = createEvent("order-urgent", 1, commonDeadline.minusSeconds(1_800));
+        String highFanout = createEvent("order-high-fanout", 1, commonDeadline);
+        createDependentEventWithState("order-high-fanout", "BLOCKED", highFanout);
+        createDependentEventWithState("order-high-fanout", "BLOCKED", highFanout);
+        String lowFanout = createEvent("order-low-fanout", 1, commonDeadline);
+        createDependentEventWithState("order-low-fanout", "BLOCKED", lowFanout);
+        String ordinary = createEvent("order-ordinary", 1, commonDeadline);
+        String attempted = createEvent("order-attempted", 1, commonDeadline);
+        jdbcTemplate.update("UPDATE restore_event SET attempt_count = 1 WHERE id = ?", UUID.fromString(attempted));
+        String lowerPriority = createEvent("order-lower-priority", 2, commonDeadline.minusSeconds(3_000));
+
+        mockMvc.perform(post("/api/v1/worker/claims").contentType(MediaType.APPLICATION_JSON)
+                        .content(claimRequest("ranking-worker", 6, 60)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].eventId").value(urgent))
+                .andExpect(jsonPath("$[1].eventId").value(highFanout))
+                .andExpect(jsonPath("$[2].eventId").value(lowFanout))
+                .andExpect(jsonPath("$[3].eventId").value(ordinary))
+                .andExpect(jsonPath("$[4].eventId").value(attempted))
+                .andExpect(jsonPath("$[5].eventId").value(lowerPriority));
+    }
+
+    @Test
     void reclaimsAnExpiredVisibilityLeaseForAnotherWorker() throws Exception {
         String eventId = createEvent();
         mockMvc.perform(post("/api/v1/worker/claims").contentType(MediaType.APPLICATION_JSON)
@@ -214,10 +239,15 @@ class RecoveryWorkerControllerTest {
     }
 
     private String createEvent(String correlationId) throws Exception {
+        return createEvent(correlationId, 1, null);
+    }
+
+    private String createEvent(String correlationId, int priority, Instant deadlineAt) throws Exception {
+        String deadline = deadlineAt == null ? "" : ",\"deadlineAt\":\"" + deadlineAt + "\"";
         String response = mockMvc.perform(post("/api/v1/events").contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"idempotencyKey":"lease-%s","correlationId":"%s","targetSystem":"SALESFORCE","payloadReference":"s3://restore/lease.json","priority":1}
-                                """.formatted(UUID.randomUUID(), correlationId)))
+                                {"idempotencyKey":"lease-%s","correlationId":"%s","targetSystem":"SALESFORCE","payloadReference":"s3://restore/lease.json","priority":%d%s}
+                                """.formatted(UUID.randomUUID(), correlationId, priority, deadline)))
                 .andExpect(status().isCreated())
                 .andReturn().getResponse().getContentAsString();
         return objectMapper.readTree(response).path("eventId").asText();
