@@ -16,6 +16,12 @@ public interface RecoveryEventRepository extends JpaRepository<RecoveryEventEnti
     Optional<RecoveryEventEntity> findByIdempotencyKey(String idempotencyKey);
     List<RecoveryEventEntity> findByStateOrderByCreatedAtAsc(RecoveryEventState state);
 
+    @Query("SELECT recoveryEvent.state AS state, COUNT(recoveryEvent) AS count FROM RecoveryEventEntity recoveryEvent GROUP BY recoveryEvent.state")
+    List<RecoveryEventStateCount> countByState();
+
+    @Query("SELECT recoveryEvent.createdAt AS createdAt, recoveryEvent.updatedAt AS completedAt FROM RecoveryEventEntity recoveryEvent WHERE recoveryEvent.state = :state")
+    List<CompletedRecoveryTiming> findCompletionTimings(@Param("state") RecoveryEventState state);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT recoveryEvent FROM RecoveryEventEntity recoveryEvent WHERE recoveryEvent.id = :eventId")
     Optional<RecoveryEventEntity> lockById(@Param("eventId") UUID eventId);

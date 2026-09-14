@@ -102,7 +102,7 @@ The suite will ship these repeatable scenario controls:
 | Priority and deadline | High-value, time-sensitive work is selected before lower-priority work. |
 | Terminal failure | Non-retriable and exhausted events are recorded clearly, without an infinite retry loop. |
 
-The dashboard will display event-status counts, attempt history, circuit state, queue depth, processing rate, success/failure rate, and an event timeline. Data comes from the application’s local database and metrics endpoint, not fabricated screenshots.
+The dashboard will display event-status counts, attempt history, circuit state, queue depth, processing rate, success/failure rate, and an event timeline. Data comes from the application’s local database and metrics endpoint, not fabricated screenshots. The statistics contract zero-fills every event and attempt state, defines pending depth as all non-terminal events, and reports nearest-rank p95 receipt-to-success latency.
 
 ## Planned API surface
 
