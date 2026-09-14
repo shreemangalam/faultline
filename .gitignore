@@ -1,6 +1,7 @@
 # Local-only material: interview answers, learning notes, scratch work, recordings.
 # These never enter the public repository.
 /private/
+/tmp/
 
 # Secrets and developer-specific configuration
 .env
