@@ -78,3 +78,8 @@ This is a concise, versioned record of shipped engineering decisions. It is inte
 - Added repeatable dependency-cascade and bounded thundering-herd loaders using production intake rules.
 - Added an isolated, assertion-driven benchmark harness. A 50,000-event run completed with 50,010 attempts, 50,000 accepted deliveries, zero pending or terminal events, a 206.45 events/s active drain rate, and a 272.041 s p95 including circuit cool-down.
 - Kept the development database intact and removed the benchmark-only containers and volume after verification.
+
+## 2026-09-14 — Restore ordering contract
+
+- Added blocked direct-dependant count to claim ranking and proved priority, deadline, fan-out, and prior-attempt ordering through the HTTP worker path.
+- Documented at-least-once delivery with explicit dependency partial order. Independent branches have no FIFO or completion-order guarantee and may run concurrently.

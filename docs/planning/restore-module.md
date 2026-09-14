@@ -79,11 +79,11 @@ Among events ready for work, ranking is deterministic and documented:
 
 1. business priority (P1 before P5);
 2. approaching business deadline;
-3. dependency-unblocking value (number of still-blocked descendants);
+3. number of currently blocked direct dependants;
 4. lower prior attempt count as a final cost-aware tie-breaker;
 5. creation time and event ID for stable ordering.
 
-The implementation will explicitly define which fields are ascending/descending and test ties, so the ranking is defensible rather than accidental.
+This ranking controls admission, not completion order. Restore guarantees explicit prerequisite order within a correlation but does not impose FIFO on independent events or sibling branches; concurrent workers may complete them in either order. The complete boundary is recorded in [`docs/technical/restore-delivery-ordering.md`](../technical/restore-delivery-ordering.md).
 
 ## Downstream simulator and scenarios
 
