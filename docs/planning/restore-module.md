@@ -98,7 +98,7 @@ The suite will ship these repeatable scenario controls:
 | Scenario | What it proves |
 |---|---|
 | Dependency cascade | Downstream events remain blocked until their prerequisite succeeds. |
-| Thundering herd | 100 temporary failures do not flood a recovering system; circuit and jitter work. |
+| Thundering herd | Up to 50,000 temporary failures exercise bounded batches, circuit protection, jitter, and measured recovery. |
 | Priority and deadline | High-value, time-sensitive work is selected before lower-priority work. |
 | Terminal failure | Non-retriable and exhausted events are recorded clearly, without an infinite retry loop. |
 

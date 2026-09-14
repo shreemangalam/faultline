@@ -45,7 +45,7 @@ public class RecoveryEventService {
     }
 
     public Submission submit(CreateRecoveryEventCommand command) {
-        String fingerprint = fingerprint(command);
+        String fingerprint = RecoveryEventFingerprint.calculate(command);
         var existing = eventRepository.findByIdempotencyKey(command.idempotencyKey());
         if (existing.isPresent()) {
             if (!existing.get().getRequestFingerprint().equals(fingerprint)) {
@@ -131,20 +131,6 @@ public class RecoveryEventService {
                 .toList();
         return new RecoveryEventDetails(event, auditRepository.findByEventIdOrderByOccurredAtAsc(event.getId()),
                 attemptRepository.findByEventIdOrderByAttemptNumberAsc(event.getId()), prerequisiteEventIds);
-    }
-
-    private String fingerprint(CreateRecoveryEventCommand command) {
-        String prerequisiteIds = command.prerequisiteEventIds().stream()
-                .map(UUID::toString)
-                .sorted()
-                .collect(Collectors.joining(","));
-        String canonical = String.join("\u001F", command.correlationId(), command.targetSystem(), command.payloadReference(),
-                Integer.toString(command.priority()), command.deadlineAt() == null ? "" : command.deadlineAt().toString(), prerequisiteIds);
-        try {
-            return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(canonical.getBytes(StandardCharsets.UTF_8)));
-        } catch (NoSuchAlgorithmException exception) {
-            throw new IllegalStateException("SHA-256 must be available in the JVM.", exception);
-        }
     }
 
     public record Submission(RecoveryEventDetails details, boolean created) {
