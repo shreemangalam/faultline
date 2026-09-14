@@ -17,7 +17,7 @@ It contains two linked backend modules and one operator dashboard:
 
 ## Status
 
-Survey is a complete, containerised impact-analysis module. Restore now has durable event intake, dependency-aware release and terminal-failure propagation, worker leases, bounded retries, persisted target circuits, queryable attempt history, a controllable downstream simulator, and timeout-bound HTTP execution with automatic outcome classification; aggregate observability and repeatable scenario loaders are next. The public design baseline is available in [`docs/planning`](docs/planning).
+Survey is a complete, containerised impact-analysis module. Restore now has durable event intake, dependency-aware release and terminal-failure propagation, worker leases, bounded retries, persisted target circuits, queryable attempt history, a controllable downstream simulator, timeout-bound HTTP execution, and opt-in automatic batch scheduling; aggregate observability and repeatable scenario loaders are next. The public design baseline is available in [`docs/planning`](docs/planning).
 
 No real SAP, CPI, Salesforce, customer data, or credentials are used. All demo systems and payloads are fictional and run locally.
 
@@ -41,4 +41,4 @@ Java 21 or later LTS, Spring Boot, Maven, PostgreSQL, Flyway, Next.js, TypeScrip
 docker compose -f infra/compose.yaml up --build
 ```
 
-Open the operator dashboard at `http://localhost:3000`. The Survey API listens on `http://localhost:8081`; its versioned contract is [here](docs/api/survey-openapi.json). Restore listens on `http://localhost:8082` and persists recovery events locally.
+Open the operator dashboard at `http://localhost:3000`. The Survey API listens on `http://localhost:8081`; its versioned contract is [here](docs/api/survey-openapi.json). Restore listens on `http://localhost:8082` and persists recovery events locally. Automatic Restore delivery is disabled by default; set `RESTORE_WORKER_ENABLED=true` only when that process should execute eligible queue data.
