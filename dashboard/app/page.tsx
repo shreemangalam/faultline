@@ -70,9 +70,8 @@ export default function SurveyDashboard() {
       <div className="landscape-toolbar"><div><strong>{healthMap.systems.length}</strong> systems <span>/</span> <strong>{healthMap.integrations.length}</strong> integration paths</div><span>{warnings.length ? warnings.length + " topology warning" + (warnings.length === 1 ? "" : "s") : "No topology warnings"} · Select a system to focus its connections</span></div>
       <section className="workspace">
         <div className="panel graph-panel">
-          <div className="panel-heading"><div><h2>Integration landscape</h2><p className="panel-description">From business sources to downstream delivery</p></div><div className="graph-legend"><span><i className="legend-dot" />Selected system</span><span><i className="legend-arrow" />Data direction →</span></div></div>
-          <div className="graph-scroll" tabIndex={0} role="region" aria-label="Scrollable landscape topology"><LandscapeGraph systems={healthMap.systems} integrations={healthMap.integrations} selectedSystemId={selectedSystemId} onSelect={setSelectedSystemId} /></div>
-          <div className="graph-caption"><span>Focus: <strong>{selected?.label ?? "No system selected"}</strong></span><span>Solid = downstream · Dashed = upstream · Arrows = data direction.</span></div>
+          <div className="panel-heading"><div><h2>Integration landscape</h2><p className="panel-description">Trace a system’s connections or explore the complete landscape</p></div><div className="graph-legend"><span><i className="legend-dot" />Selected system</span><span><i className="legend-arrow" />Data direction →</span></div></div>
+          <LandscapeGraph systems={healthMap.systems} integrations={healthMap.integrations} selectedSystemId={selectedSystemId} onSelect={setSelectedSystemId} />
         </div>
         <aside className="panel control-panel">
           <div className="panel-heading"><h2>System focus</h2><span className="panel-code">Inspect & analyze</span></div>
