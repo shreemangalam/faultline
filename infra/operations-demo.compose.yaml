@@ -1,0 +1,53 @@
+# Separate project and volume: never mounts the preserved development database.
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: faultline_operations
+      POSTGRES_USER: faultline
+      POSTGRES_PASSWORD: operations-demo-only
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U faultline -d faultline_operations"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    volumes: [operations-data:/var/lib/postgresql/data]
+  survey:
+    build:
+      context: ..
+      dockerfile: survey/Dockerfile
+    environment:
+      SURVEY_DB_URL: jdbc:postgresql://postgres:5432/faultline_operations
+      POSTGRES_USER: faultline
+      POSTGRES_PASSWORD: operations-demo-only
+    depends_on:
+      postgres:
+        condition: service_healthy
+  restore:
+    build:
+      context: ..
+      dockerfile: restore/Dockerfile
+    environment:
+      RESTORE_DB_URL: jdbc:postgresql://postgres:5432/faultline_operations
+      POSTGRES_USER: faultline
+      POSTGRES_PASSWORD: operations-demo-only
+      RESTORE_WORKER_ENABLED: "false"
+      RESTORE_OPERATIONS_DEMO_ENABLED: "true"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports: ["18082:8082"]
+  dashboard:
+    build:
+      context: ..
+      dockerfile: dashboard/Dockerfile
+      args:
+        SURVEY_API_URL: http://survey:8081
+        RESTORE_API_URL: http://restore:8082
+    environment:
+      SURVEY_API_URL: http://survey:8081
+      RESTORE_API_URL: http://restore:8082
+    depends_on: [survey, restore]
+    ports: ["3002:3000"]
+volumes:
+  operations-data:
