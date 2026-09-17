@@ -388,3 +388,37 @@ summary { cursor:pointer; font-weight:600; }
 }
 .mobile-priority { display:none; }
 @media(max-width:760px) { .mobile-priority { display:inline-block; margin-left:6px; color:var(--muted); font-size:10px; font-weight:600; } }
+
+/* Survey connection tracing */
+.graph-tools { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px; margin-bottom:16px; color:var(--muted); font-size:12px; }
+.graph-view-switch { display:flex; gap:3px; padding:3px; border:1px solid var(--line); border-radius:7px; background:var(--panel-muted); }
+.graph-view-switch button { border:1px solid transparent; background:none; border-radius:5px; padding:8px 11px; color:var(--muted); font-size:12px; font-weight:600; }
+.graph-view-switch button[aria-pressed="true"] { color:var(--accent); background:var(--panel); border-color:var(--line-strong); }
+.graph-scroll .graph { min-width:900px; }
+.graph .upstream-arrow path { fill:var(--muted); }
+.graph .downstream-arrow path { fill:var(--accent); }
+.focus-graph .node-name { font-size:15px; }
+.focus-graph .node-meta { font-size:12px; }
+.graph .edge-label rect { fill:var(--graph); stroke:var(--line); }
+.graph .edge-label text { fill:var(--muted); font-size:11px; font-weight:600; }
+.empty-topology { fill:var(--muted); font-size:13px; }
+.graph-scope { color:var(--muted); font-size:12px; line-height:1.6; margin:12px 0 0; }
+.graph .map-node:focus-visible > rect:first-child { stroke-width:3; stroke-dasharray:5 2; }
+@media (max-width:760px) { .graph-panel > .panel-heading { flex-direction:column; align-items:flex-start; gap:12px; } .graph-tools { align-items:flex-start; } }
+.compact-topology,.graph-pan-hint { display:none; }
+@media (max-width:600px) {
+  .graph-scroll.direct-scroll { display:none; }
+  .compact-topology { display:block; padding:16px; background:var(--graph); border-radius:7px; }
+  .compact-topology h3 { display:flex; justify-content:space-between; gap:8px; font-size:12px; color:var(--muted); margin:0 0 10px; }
+  .compact-topology h3 span { font-weight:400; }
+  .compact-path { position:relative; margin-top:10px; }
+  .compact-node { display:grid; gap:5px; width:100%; padding:13px; text-align:left; border:1px solid var(--line-strong); border-radius:6px; background:var(--panel); color:var(--text); }
+  .compact-node strong { font-size:14px; overflow-wrap:anywhere; }
+  .compact-node span,.compact-node small { color:var(--muted); font-size:11px; }
+  .compact-node.selected { border:2px solid var(--accent); background:var(--accent-soft); }
+  .compact-protocol { display:block; margin-top:5px; color:var(--muted); font-size:11px; text-align:right; }
+  .compact-direction { margin:14px 0; color:var(--muted); font-size:11px; }
+  .compact-topology section > p { color:var(--muted); font-size:12px; }
+  .graph-pan-hint { display:block; color:var(--muted); font-size:12px; margin:12px 0 0; }
+  .graph-caption > span:last-child { display:none; }
+}

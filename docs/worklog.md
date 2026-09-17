@@ -156,3 +156,9 @@ This is a concise, versioned record of shipped engineering decisions. It is inte
 - Fixed stale details after filtering and retained scroll when changing inspected messages.
 - Preserved same-message reading position during refresh and made prerequisite navigation reveal its destination.
 - TypeScript, production build and targeted browser regressions passed; see the dated inspector context log.
+
+## 2026-09-18 — Survey connection tracing
+
+- Added a readable direct-connections view with upstream/downstream layout, protocol labels and a full-landscape switch.
+- Kept graph focus aligned with the inspector and added a vertical mobile view with keyboard navigation.
+- Verified all 16 system neighborhoods against the real API, responsive themes, proxy/SSE behavior and preserved Restore counts; see the dated Survey connections log and screenshots.

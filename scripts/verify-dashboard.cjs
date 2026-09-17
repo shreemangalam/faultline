@@ -53,6 +53,7 @@ fs.mkdirSync(output, { recursive: true });
     }
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto(base + "/");
+    await page.getByRole("button", { name: "Full landscape", exact: true }).click();
     const node = page.getByRole("button", { name: "Select SAP ECC", exact: true });
     await node.focus();
     await page.keyboard.press("Space");
