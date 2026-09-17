@@ -32,6 +32,10 @@ restore:
     initial-delay: ${RESTORE_WORKER_INITIAL_DELAY:1s}
   retry:
     jitter-window: ${RESTORE_RETRY_JITTER_WINDOW:2s}
+  stream:
+    timeout: ${RESTORE_STREAM_TIMEOUT:30m}
+    heartbeat-interval: ${RESTORE_STREAM_HEARTBEAT_INTERVAL:15s}
+    notification-buffer-capacity: ${RESTORE_STREAM_NOTIFICATION_BUFFER_CAPACITY:256}
   downstream:
     base-url: ${RESTORE_DOWNSTREAM_BASE_URL:}
     connect-timeout: ${RESTORE_DOWNSTREAM_CONNECT_TIMEOUT:1s}

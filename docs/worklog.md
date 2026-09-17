@@ -93,3 +93,9 @@ This is a concise, versioned record of shipped engineering decisions. It is inte
 
 - Added deterministic poison-message and retry-exhaustion paths backed by the real downstream simulator and executor.
 - Proved bounded attempts, queryable dead-letter states, circuit semantics, and direct plus transitive dependency-failure propagation.
+
+## 2026-09-17 — Restore live updates
+
+- Added a heartbeat-protected SSE endpoint that emits event-state notifications only after their database transaction commits.
+- Isolated client delivery behind a bounded single-thread dispatcher; retained notifications stay ordered, while overload may discard older invalidations without delaying durable recovery work.
+- Defined snapshot-on-connect and snapshot-on-reconnect semantics so PostgreSQL remains authoritative, and verified the slice with the 66-test reactor plus an isolated Java 21/PostgreSQL lifecycle proof.

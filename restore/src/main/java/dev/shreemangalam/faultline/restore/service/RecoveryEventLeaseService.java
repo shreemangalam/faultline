@@ -10,6 +10,7 @@ import dev.shreemangalam.faultline.restore.persistence.RecoveryEventDependencyEn
 import dev.shreemangalam.faultline.restore.persistence.RecoveryEventDependencyRepository;
 import dev.shreemangalam.faultline.restore.persistence.RecoveryEventEntity;
 import dev.shreemangalam.faultline.restore.persistence.RecoveryEventRepository;
+import dev.shreemangalam.faultline.restore.streaming.RecoveryStateChangePublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,6 +35,7 @@ public class RecoveryEventLeaseService {
     private final Clock clock;
     private final CircuitBreakerService circuitBreakerService;
     private final RetryBackoffPolicy retryBackoffPolicy;
+    private final RecoveryStateChangePublisher stateChangePublisher;
 
     public RecoveryEventLeaseService(
             RecoveryEventRepository eventRepository,
@@ -42,7 +44,8 @@ public class RecoveryEventLeaseService {
             RecoveryAttemptRepository attemptRepository,
             Clock clock,
             CircuitBreakerService circuitBreakerService,
-            RetryBackoffPolicy retryBackoffPolicy) {
+            RetryBackoffPolicy retryBackoffPolicy,
+            RecoveryStateChangePublisher stateChangePublisher) {
         this.eventRepository = eventRepository;
         this.auditRepository = auditRepository;
         this.dependencyRepository = dependencyRepository;
@@ -50,6 +53,7 @@ public class RecoveryEventLeaseService {
         this.clock = clock;
         this.circuitBreakerService = circuitBreakerService;
         this.retryBackoffPolicy = retryBackoffPolicy;
+        this.stateChangePublisher = stateChangePublisher;
     }
 
     @Transactional
@@ -64,6 +68,7 @@ public class RecoveryEventLeaseService {
             boolean retryDue = event.getState() == RecoveryEventState.RETRY_SCHEDULED;
             if (reclaimed) closeExpiredAttempt(event, now);
             event.claim(command.workerId(), leaseExpiresAt, now);
+            stateChangePublisher.publish(event, now);
             attemptRepository.save(new RecoveryAttemptEntity(UUID.randomUUID(), event.getId(), event.getAttemptCount(), command.workerId(), now));
             String reason = reclaimed ? "Visibility lease expired; reclaimed by worker " + command.workerId() + "."
                     : retryDue ? "Retry became eligible and was claimed by worker " + command.workerId() + "."
@@ -84,6 +89,7 @@ public class RecoveryEventLeaseService {
             attempt.finish(RecoveryAttemptOutcome.EXHAUSTED, command.reason(), command.httpStatus(), command.durationMillis(), now);
             event.exhaust(now);
             auditRepository.save(new RecoveryEventAuditEntity(UUID.randomUUID(), event.getId(), RecoveryEventState.EXHAUSTED, "Retry limit reached: " + command.reason(), now));
+            stateChangePublisher.publish(event, now);
             propagateDependencyFailure(event.getId(), event.getState(), now);
             return new RetryRecoveryEvent(event.getId(), event.getState(), null);
         }
@@ -91,6 +97,7 @@ public class RecoveryEventLeaseService {
         attempt.finish(RecoveryAttemptOutcome.TRANSIENT_FAILURE, command.reason(), command.httpStatus(), command.durationMillis(), now);
         event.scheduleRetry(nextEligibleAt, now);
         auditRepository.save(new RecoveryEventAuditEntity(UUID.randomUUID(), event.getId(), RecoveryEventState.RETRY_SCHEDULED, command.reason(), now));
+        stateChangePublisher.publish(event, now);
         return new RetryRecoveryEvent(event.getId(), event.getState(), nextEligibleAt);
     }
 
@@ -101,6 +108,7 @@ public class RecoveryEventLeaseService {
         activeAttempt(event).finish(RecoveryAttemptOutcome.PERMANENT_FAILURE, command.reason(), command.httpStatus(), command.durationMillis(), now);
         event.failFinal(now);
         auditRepository.save(new RecoveryEventAuditEntity(UUID.randomUUID(), event.getId(), RecoveryEventState.FAILED_FINAL, "Permanent failure: " + command.reason(), now));
+        stateChangePublisher.publish(event, now);
         propagateDependencyFailure(event.getId(), event.getState(), now);
         return new FailedRecoveryEvent(event.getId(), event.getState());
     }
@@ -113,6 +121,7 @@ public class RecoveryEventLeaseService {
         circuitBreakerService.recordSuccess(event.getTargetSystem(), now);
         event.complete(now);
         auditRepository.save(new RecoveryEventAuditEntity(UUID.randomUUID(), event.getId(), RecoveryEventState.COMPLETED, "Completed by worker " + command.workerId() + ".", now));
+        stateChangePublisher.publish(event, now);
         List<UUID> releasedEventIds = dependencyRepository.findByPrerequisiteEventIdOrderByEventIdAsc(event.getId()).stream().map(RecoveryEventDependencyEntity::getEventId).distinct().flatMap(id -> releaseIfUnblocked(id, now).stream()).toList();
         return new CompletedRecoveryEvent(event.getId(), releasedEventIds);
     }
@@ -150,6 +159,7 @@ public class RecoveryEventLeaseService {
                 RecoveryEventEntity dependent = eventRepository.lockById(dependentId).orElseThrow();
                 if (dependent.getState() != RecoveryEventState.BLOCKED) return;
                 dependent.failDependency(now);
+                stateChangePublisher.publish(dependent, now);
                 auditRepository.save(new RecoveryEventAuditEntity(
                         UUID.randomUUID(),
                         dependentId,
@@ -166,6 +176,7 @@ public class RecoveryEventLeaseService {
         RecoveryEventEntity dependent = eventRepository.lockById(eventId).orElseThrow();
         if (dependent.getState() != RecoveryEventState.BLOCKED || !allPrerequisitesComplete(eventId)) return List.of();
         dependent.release(now);
+        stateChangePublisher.publish(dependent, now);
         auditRepository.save(new RecoveryEventAuditEntity(UUID.randomUUID(), eventId, RecoveryEventState.ELIGIBLE, "All prerequisites completed.", now));
         return List.of(eventId);
     }

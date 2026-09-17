@@ -8,6 +8,7 @@ import dev.shreemangalam.faultline.restore.persistence.RecoveryEventDependencyEn
 import dev.shreemangalam.faultline.restore.persistence.RecoveryEventDependencyRepository;
 import dev.shreemangalam.faultline.restore.persistence.RecoveryEventEntity;
 import dev.shreemangalam.faultline.restore.persistence.RecoveryEventRepository;
+import dev.shreemangalam.faultline.restore.streaming.RecoveryStateChangePublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,14 +35,16 @@ public class RecoveryEventService {
     private final RecoveryAttemptRepository attemptRepository;
     private final Clock clock;
     private final CircuitBreakerService circuitBreakerService;
+    private final RecoveryStateChangePublisher stateChangePublisher;
 
-    public RecoveryEventService(RecoveryEventRepository eventRepository, RecoveryEventAuditRepository auditRepository, RecoveryEventDependencyRepository dependencyRepository, RecoveryAttemptRepository attemptRepository, Clock clock, CircuitBreakerService circuitBreakerService) {
+    public RecoveryEventService(RecoveryEventRepository eventRepository, RecoveryEventAuditRepository auditRepository, RecoveryEventDependencyRepository dependencyRepository, RecoveryAttemptRepository attemptRepository, Clock clock, CircuitBreakerService circuitBreakerService, RecoveryStateChangePublisher stateChangePublisher) {
         this.eventRepository = eventRepository;
         this.auditRepository = auditRepository;
         this.dependencyRepository = dependencyRepository;
         this.attemptRepository = attemptRepository;
         this.clock = clock;
         this.circuitBreakerService = circuitBreakerService;
+        this.stateChangePublisher = stateChangePublisher;
     }
 
     public Submission submit(CreateRecoveryEventCommand command) {
@@ -77,6 +80,7 @@ public class RecoveryEventService {
                 new RecoveryEventAuditEntity(UUID.randomUUID(), event.getId(), initialState, initialReason(
                         initialState, prerequisites.size(), failedPrerequisite), now)
         ));
+        stateChangePublisher.publish(event, now);
         return new Submission(details(event), true);
     }
 

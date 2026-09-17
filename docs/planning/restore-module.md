@@ -121,11 +121,12 @@ The dashboard will display event-status counts, attempt history, circuit state, 
 | `POST /api/v1/scenarios/thundering-herd` | Load the controlled outage demo. |
 | `GET /api/v1/circuit-breakers` | Inspect all target-health states. |
 | `GET /api/v1/statistics` | Return operational aggregates for the dashboard. |
+| `GET /api/v1/stream` | Stream committed recovery-state notifications over SSE. |
 | `POST /api/v1/admin/events/{eventId}/retry` | Explicit, authenticated operator retry action. |
 
 ## Frontend experience and live updates
 
-The Restore dashboard is a Next.js view driven by ordinary REST queries for initial state and Server-Sent Events (SSE) for subsequent updates. SSE is a suitable first choice because the browser needs to receive status changes, while the user does not need a two-way real-time protocol.
+The Restore dashboard is a Next.js view driven by ordinary REST queries for initial state and Server-Sent Events (SSE) for subsequent updates. The stream is a process-local notification path: `stream-ready` triggers a REST refresh, committed transitions arrive as `recovery-event`, and reconnects always rebuild from the database-backed snapshot. A bounded single-thread dispatcher preserves retained notification order without allowing a slow client to delay durable recovery work; overload may discard older invalidations because the next snapshot remains authoritative. SSE is a suitable first choice because the browser needs to receive status changes, while the user does not need a two-way real-time protocol.
 
 The screen has four connected parts:
 
