@@ -19,7 +19,7 @@ public class RecoveryStreamController {
 
     @GetMapping(produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter subscribe(HttpServletResponse response) {
-        response.setHeader("Cache-Control", "no-cache");
+        response.setHeader("Cache-Control", "no-cache, no-transform");
         response.setHeader("X-Accel-Buffering", "no");
         return stream.subscribe();
     }
