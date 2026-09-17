@@ -103,7 +103,6 @@ export default function RestoreDashboard() {
   }, [loadSnapshot]);
 
   useEffect(() => { if (confirm) dialog.current?.showModal(); else dialog.current?.close(); }, [confirm]);
-  useEffect(() => { setLimit(30); }, [filter, query]);
 
   async function runAction(request: Action) {
     setConfirm(null);
@@ -124,7 +123,13 @@ export default function RestoreDashboard() {
 
   const matches = useMemo(() => rankEvents(events.filter(event => (filter === "ALL" || event.state === filter) && [event.correlationId, event.targetSystem, event.payloadReference, event.eventId, messageName(event)].join(" ").toLowerCase().includes(query.trim().toLowerCase()))), [events, filter, query]);
   const visibleEvents = matches.slice(0, limit);
-  const selected = events.find(event => event.eventId === selectedEventId) ?? null;
+  const selected = matches.find(event => event.eventId === selectedEventId) ?? matches[0] ?? null;
+  // Keep the inspector within the current results, including after live state changes.
+  // Only changing the inspected message resets scroll; snapshot refreshes preserve it.
+  useEffect(() => {
+    setSelectedEventId(selected?.eventId ?? null);
+    detail.current?.scrollTo({ top: 0 });
+  }, [selected?.eventId]);
   const unhealthy = [...circuits].filter(circuit => circuit.state !== "CLOSED");
   const orderedCircuits = [...circuits].sort((a, b) => Number(a.state === "CLOSED") - Number(b.state === "CLOSED") || a.targetSystem.localeCompare(b.targetSystem));
   const firstUnhealthy = unhealthy[0];
@@ -133,6 +138,12 @@ export default function RestoreDashboard() {
   const batchAction: Action = { name: "Run next batch", path: "/worker/run-once", body: { workerId: "dashboard-worker", maxEvents: 5, leaseSeconds: 60 }, description: "Attempt at most five eligible messages using real HTTP delivery. Dependency, retry and circuit rules still apply. This does not enable the scheduled worker." };
 
   function selectEvent(id: string, moveFocus = false) {
+    const index = matches.findIndex(event => event.eventId === id);
+    if (index < 0) {
+      setFilter("ALL");
+      setQuery("");
+      setLimit(Math.max(30, rankEvents(events).findIndex(event => event.eventId === id) + 1));
+    } else if (index >= limit) setLimit(index + 1);
     setSelectedEventId(id);
     if (moveFocus || window.innerWidth < 1000) window.requestAnimationFrame(() => { detail.current?.focus(); detail.current?.scrollIntoView({ behavior: "auto", block: "start" }); });
   }
@@ -166,20 +177,20 @@ export default function RestoreDashboard() {
       </section>
 
       <section className="queue-workspace">
-        <div className="panel queue-panel"><div className="panel-heading"><div><h2>Recovery queue <span className="count-label">{statistics.totalEvents}</span></h2><p className="panel-description">Pending first, then priority and deadline. Execution order is decided by Restore.</p></div><label className="queue-search"><span className="sr-only">Search messages</span><input value={query} onChange={event => setQuery(event.target.value)} placeholder="Search order, target or ID" type="search" /></label></div>
-          <div className="filter-row" role="group" aria-label="Filter recovery queue">{filters.filter(state => state === "ALL" || state === filter || (statistics.eventCounts[state] ?? 0) > 0).map(state => <button aria-pressed={filter === state} className={filter === state ? "active" : ""} key={state} onClick={() => setFilter(state)}>{labels[state]} <span>{state === "ALL" ? statistics.totalEvents : statistics.eventCounts[state]}</span></button>)}</div>
-          <div className="table-wrap"><table className="queue-table"><thead><tr><th scope="col">Message / business reference</th><th scope="col">State</th><th scope="col">Priority / timing</th></tr></thead><tbody>{visibleEvents.map(event => <tr key={event.eventId} className={event.eventId === selectedEventId ? "selected" : ""} onClick={() => selectEvent(event.eventId)}>
-            <td><button aria-pressed={event.eventId === selectedEventId} aria-controls="event-evidence" onClick={click => { click.stopPropagation(); selectEvent(event.eventId); }}><span>{messageName(event)}<b className="mobile-priority">P{event.priority}</b></span><small>{correlationName(event.correlationId)}</small></button><span className="row-target">{targetName(event.targetSystem)}</span></td>
+        <div className="panel queue-panel"><div className="panel-heading"><div><h2>Recovery queue <span className="count-label">{statistics.totalEvents}</span></h2><p className="panel-description">Pending first, then priority and deadline. Execution order is decided by Restore.</p></div><label className="queue-search"><span className="sr-only">Search messages</span><input value={query} onChange={event => { setQuery(event.target.value); setLimit(30); }} placeholder="Search order, target or ID" type="search" /></label></div>
+          <div className="filter-row" role="group" aria-label="Filter recovery queue">{filters.filter(state => state === "ALL" || state === filter || (statistics.eventCounts[state] ?? 0) > 0).map(state => <button aria-pressed={filter === state} className={filter === state ? "active" : ""} key={state} onClick={() => { setFilter(state); setLimit(30); }}>{labels[state]} <span>{state === "ALL" ? statistics.totalEvents : statistics.eventCounts[state]}</span></button>)}</div>
+          <div className="table-wrap"><table className="queue-table"><thead><tr><th scope="col">Message / business reference</th><th scope="col">State</th><th scope="col">Priority / timing</th></tr></thead><tbody>{visibleEvents.map(event => <tr key={event.eventId} className={event.eventId === selected?.eventId ? "selected" : ""} onClick={() => selectEvent(event.eventId)}>
+            <td><button aria-pressed={event.eventId === selected?.eventId} aria-controls="event-evidence" onClick={click => { click.stopPropagation(); selectEvent(event.eventId); }}><span>{messageName(event)}<b className="mobile-priority">P{event.priority}</b></span><small>{correlationName(event.correlationId)}</small></button><span className="row-target">{targetName(event.targetSystem)}</span></td>
             <td><StateBadge state={event.state} /><small className="row-caption">{event.state === "BLOCKED" ? event.prerequisiteEventIds.length + " prerequisite(s)" : event.attemptCount + " attempt(s)"}</small></td>
             <td><span className={"priority " + (event.priority === 1 ? "urgent" : "")}>P{event.priority}</span><small className="row-caption">{terminalStates.has(event.state) ? "Finished" : event.deadlineAt ? deadlineText(event.deadlineAt, now) : event.state === "BLOCKED" ? "Awaiting release" : event.state === "IN_PROGRESS" ? "Worker lease active" : "Eligible " + relativeTime(event.nextEligibleAt, now)}</small></td>
           </tr>)}</tbody></table></div>
-          {visibleEvents.length === 0 && <div className="empty-state"><strong>{events.length ? "No matching messages" : "Your recovery queue is empty"}</strong><p>{events.length ? "Try another state or search term." : "Load a scenario in Demo tools to explore a recovery incident."}</p>{events.length > 0 && <button className="button-secondary" onClick={() => { setFilter("ALL"); setQuery(""); }}>Clear filters</button>}</div>}
+          {visibleEvents.length === 0 && <div className="empty-state"><strong>{events.length ? "No matching messages" : "Your recovery queue is empty"}</strong><p>{events.length ? "Try another state or search term." : "Load a scenario in Demo tools to explore a recovery incident."}</p>{events.length > 0 && <button className="button-secondary" onClick={() => { setFilter("ALL"); setQuery(""); setLimit(30); }}>Clear filters</button>}</div>}
           <div className="queue-footer"><span>Showing {visibleEvents.length} of {matches.length} matching messages</span>{matches.length > limit && <button className="button-secondary" onClick={() => setLimit(limit + 30)}>Show 30 more</button>}</div>
         </div>
 
         <aside id="event-evidence" ref={detail} tabIndex={-1} className="panel evidence-panel" aria-label="Selected event evidence">
           <div className="panel-heading"><div><p className="eyebrow">Message inspector</p><h2>{selected ? messageName(selected) : "Select a message"}</h2></div></div>
-          {selected ? <><div className="evidence-reference"><strong>{correlationName(selected.correlationId)}</strong><StateBadge state={selected.state} /></div><EventDetail event={selected} events={events} onSelect={id => selectEvent(id, true)} now={now} /></> : <p className="empty-state">Choose a queue message to inspect its prerequisites and delivery evidence.</p>}
+          {selected ? <><div className="evidence-reference"><strong>{correlationName(selected.correlationId)}</strong><StateBadge state={selected.state} /></div><EventDetail key={selected.eventId} event={selected} events={events} onSelect={id => selectEvent(id, true)} now={now} /></> : <p className="empty-state">{matches.length === 0 && events.length > 0 ? "No messages match the current filters. Clear or adjust the filters to inspect a message." : "Choose a queue message to inspect its prerequisites and delivery evidence."}</p>}
         </aside>
       </section>
       <div className="snapshot-note">{error ? "Last successful snapshot" : "REST snapshot"} · {formatDate(statistics.generatedAt)} · PostgreSQL is authoritative. <Link href="/help">How live updates work</Link></div>
