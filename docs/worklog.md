@@ -127,3 +127,9 @@ This is a concise, versioned record of shipped engineering decisions. It is inte
 - Rebuilt Survey around topology focus, connection metadata and a coherent incident assessment with backend priorities and recovery warnings.
 - Added keyboard selection semantics and explicit selected-origin/report context.
 - Verified TypeScript and production build.
+
+## 2026-09-18 — Restore operations console
+
+- Rebuilt monitoring around the active target incident, pending work, terminal failures and real recovery latency.
+- Added searchable counted queue filters, a full message inspector and separately confirmed local demo tools.
+- Verified TypeScript/build and the real 39-event PostgreSQL demo; preserved database remains at 135 events.
