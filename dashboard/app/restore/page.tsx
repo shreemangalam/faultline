@@ -122,7 +122,7 @@ export default function RestoreDashboard() {
   return <main className="app-shell restore-shell">
     <header className="topbar">
       <div className="brand"><span className="brand-mark">F</span><span>FAULTLINE</span></div>
-      <nav className="module-nav" aria-label="Faultline modules"><Link href="/">Survey</Link><Link className="active" href="/restore">Restore</Link></nav>
+      <nav className="module-nav" aria-label="Faultline modules"><Link href="/">Survey</Link><Link className="active" href="/restore">Restore</Link><Link href="/help">Help</Link></nav>
       <div className="topbar-actions"><span className="environment"><i />LOCAL CONTROL PLANE</span><button className="theme-toggle" type="button" onClick={() => setTheme(theme === "dark" ? "light" : "dark")} aria-label={themeLabel} title={themeLabel}>{theme === "dark" ? "☼" : "◐"}</button></div>
     </header>
 
