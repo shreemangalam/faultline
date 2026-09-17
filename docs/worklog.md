@@ -143,3 +143,10 @@ This is a concise, versioned record of shipped engineering decisions. It is inte
 
 - Browser QA found gzip buffering on the Next.js SSE proxy; added no-transform to preserve immediate delivery.
 - Verified the lifecycle integration test and compressed-client readiness through the rebuilt real proxy. SSE semantics remain unchanged.
+
+## 2026-09-18 — Responsive and interaction verification
+
+- Verified both production stacks across four desktop/tablet/mobile sizes and both themes, including keyboard use, dialogs, empty/loading/error states, large queues, terminal evidence and stream reconnects.
+- Added repeatable browser verification and real application screenshots; refined compact layouts, mobile priority visibility and connection feedback.
+- Kept all original 135 records and their state distribution intact; unrelated scenario submissions increased the development total to 353. Final curated showcase uses a fresh separate 39-event database; workers remain disabled.
+- TypeScript, production builds, Compose validation and relevant Maven verification pass. Details and screenshots are in the dated console QA log.

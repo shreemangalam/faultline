@@ -38,7 +38,7 @@ export default function SurveyDashboard() {
       setHealthMap(map);
       setWarnings(warningBody.warnings);
       setSelectedSystemId(current => map.systems.some(system => system.systemId === current) ? current : map.systems[0]?.systemId ?? "");
-    } catch (reason) { setError(reason instanceof Error ? reason.message : "Survey request failed."); }
+    } catch (reason) { setError("Survey could not complete the request. Check the service connection and try again."); }
     finally { setLoading(false); }
   }, []);
   useEffect(() => { void load(); }, [load]);
@@ -51,7 +51,7 @@ export default function SurveyDashboard() {
       const response = await fetch(api + "/analysis/impact", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ systemId: selectedSystemId, degradationType: "COMPLETE_OUTAGE" }) });
       if (!response.ok) throw new Error("The impact report could not be created. Your existing report is still available.");
       setReport(await response.json() as Report);
-    } catch (reason) { setError(reason instanceof Error ? reason.message : "Survey request failed."); }
+    } catch (reason) { setError("Survey could not complete the request. Check the service connection and try again."); }
     finally { setSubmitting(false); }
   }
 
@@ -72,7 +72,7 @@ export default function SurveyDashboard() {
         <div className="panel graph-panel">
           <div className="panel-heading"><div><h2>Integration landscape</h2><p className="panel-description">From business sources to downstream delivery</p></div><div className="graph-legend"><span><i className="legend-dot" />Selected system</span><span><i className="legend-arrow" />Data direction →</span></div></div>
           <div className="graph-scroll" tabIndex={0} role="region" aria-label="Scrollable landscape topology"><LandscapeGraph systems={healthMap.systems} integrations={healthMap.integrations} selectedSystemId={selectedSystemId} onSelect={setSelectedSystemId} /></div>
-          <div className="graph-caption"><span>Focus: <strong>{selected?.label ?? "No system selected"}</strong></span><span>Solid connections show immediate upstream and downstream paths.</span></div>
+          <div className="graph-caption"><span>Focus: <strong>{selected?.label ?? "No system selected"}</strong></span><span>Solid = downstream · Dashed = upstream · Arrows = data direction.</span></div>
         </div>
         <aside className="panel control-panel">
           <div className="panel-heading"><h2>System focus</h2><span className="panel-code">Inspect & analyze</span></div>
@@ -97,10 +97,10 @@ export default function SurveyDashboard() {
           <div className="recovery"><div className="panel-heading"><h3>Dependency-safe recovery</h3><span className="state-badge">{report.recovery.cycleWarning ? "Partial sequence" : "Safe sequence"}</span></div>
             <ol>{report.recovery.recoverySequence.map((id, index) => <li key={id}><i>{String(index + 1).padStart(2, "0")}</i><span>{label(id)}</span></li>)}</ol>
             {report.recovery.cycleWarning && <div className="warning"><strong>Manual review required</strong><p>A cycle prevents a complete recovery order. Unresolved: {report.recovery.unresolvedSystemIds.map(label).join(", ")}.</p></div>}
-            {report.warnings.map(warning => <p className="report-warning" key={warning}>{warning}</p>)}
+            {!report.recovery.cycleWarning && report.warnings.map(warning => <p className="report-warning" key={warning}>{warning}</p>)}
           </div>
         </div>
-        <details className="technical-details"><summary>Report evidence</summary><p>Report <code>{report.reportId}</code></p><p>Landscape <code>{report.landscapeReference}</code></p><p>Impact and recovery sequence are provided by Survey. This assessment is independent of Restore queue state.</p></details>
+        <details className="technical-details"><summary>Report evidence</summary>{report.warnings.map(warning => <p key={warning}>{warning}</p>)}<p>Report <code>{report.reportId}</code></p><p>Landscape <code>{report.landscapeReference}</code></p><p>Impact and recovery sequence are provided by Survey. This assessment is independent of Restore queue state.</p></details>
       </section> : <div className="analysis-prompt"><span className="step-number">01</span><div><strong>Start with a failure origin.</strong><p>Select a system, then analyze its outage to see exposure, priorities, and recovery steps here.</p></div></div>}
 
       <section className="panel connection-panel"><div className="panel-heading"><div><h2>{selected?.label ?? "System"} connections</h2><p className="panel-description">Protocol, business domain and SLA from the active landscape</p></div><span className="panel-code">{paths.length} paths</span></div>
