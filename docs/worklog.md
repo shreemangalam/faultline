@@ -115,3 +115,9 @@ This is a concise, versioned record of shipped engineering decisions. It is inte
 - Added an opt-in, isolated 39-event Salesforce outage narrative using production intake, real HTTP delivery, backoff, circuit and dependency transitions.
 - Added a dedicated Compose project/volume on port 3002; the loader refuses nonempty databases and never replaces preserved records.
 - Verified three new regression tests and the full 69-test Maven reactor; both Compose configurations validate.
+
+## 2026-09-17 — Shared application shell
+
+- Consolidated navigation, local-demo identity and resilient theme preference handling across all three pages.
+- Established a coherent light/dark visual system with readable typography and keyboard focus treatment.
+- Verified TypeScript and the production dashboard build.

@@ -18,7 +18,6 @@ type Statistics = {
   attemptCounts: Record<string, number>; p95SuccessfulRecoveryLatencyMillis: number | null;
 };
 type Circuit = { targetSystem: string; state: "CLOSED" | "OPEN" | "HALF_OPEN"; consecutiveFailures: number; openUntil: string | null; updatedAt: string };
-type Theme = "dark" | "light";
 type StreamState = "connecting" | "live" | "reconnecting";
 
 const api = "/api/restore/v1";
@@ -31,7 +30,6 @@ export default function RestoreDashboard() {
   const [circuits, setCircuits] = useState<Circuit[]>([]);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [filter, setFilter] = useState<"ALL" | EventState>("ALL");
-  const [theme, setTheme] = useState<Theme>("dark");
   const [streamState, setStreamState] = useState<StreamState>("connecting");
   const [loading, setLoading] = useState(true);
   const [action, setAction] = useState<string | null>(null);
@@ -62,16 +60,6 @@ export default function RestoreDashboard() {
     }
   }, []);
 
-  useEffect(() => {
-    const savedTheme = window.localStorage.getItem("faultline-theme");
-    if (savedTheme === "light" || savedTheme === "dark") setTheme(savedTheme);
-    else if (window.matchMedia("(prefers-color-scheme: light)").matches) setTheme("light");
-  }, []);
-
-  useEffect(() => {
-    document.documentElement.dataset.theme = theme;
-    window.localStorage.setItem("faultline-theme", theme);
-  }, [theme]);
 
   useEffect(() => {
     void loadSnapshot();
@@ -117,14 +105,8 @@ export default function RestoreDashboard() {
   const selectedEvent = useMemo(() => events.find((event) => event.eventId === selectedEventId) ?? null, [events, selectedEventId]);
   const visibleEvents = useMemo(() => events.filter((event) => filter === "ALL" || event.state === filter).slice(0, 40), [events, filter]);
   const healthyCircuits = circuits.filter((circuit) => circuit.state === "CLOSED").length;
-  const themeLabel = theme === "dark" ? "Use light theme" : "Use dark theme";
 
-  return <main className="app-shell restore-shell">
-    <header className="topbar">
-      <div className="brand"><span className="brand-mark">F</span><span>FAULTLINE</span></div>
-      <nav className="module-nav" aria-label="Faultline modules"><Link href="/">Survey</Link><Link className="active" href="/restore">Restore</Link><Link href="/help">Help</Link></nav>
-      <div className="topbar-actions"><span className="environment"><i />LOCAL CONTROL PLANE</span><button className="theme-toggle" type="button" onClick={() => setTheme(theme === "dark" ? "light" : "dark")} aria-label={themeLabel} title={themeLabel}>{theme === "dark" ? "☼" : "◐"}</button></div>
-    </header>
+  return <main id="main-content" className="app-shell restore-shell">
 
     <section className="page-heading restore-heading">
       <div><p className="eyebrow">RESTORE / RECOVERY CONTROL</p><h1>Durable recovery console</h1><p className="lede">Inspect dependency-aware work, target health, and the exact audit trail behind every recovery decision.</p></div>

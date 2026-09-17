@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-type Theme = "dark" | "light";
 
 const lifecycle = [
   ["RECEIVED / ELIGIBLE", "Restore validates and persists each event before it can be claimed."],
@@ -15,27 +14,10 @@ const lifecycle = [
 ];
 
 export default function HelpPage() {
-  const [theme, setTheme] = useState<Theme>("dark");
 
-  useEffect(() => {
-    const savedTheme = window.localStorage.getItem("faultline-theme");
-    if (savedTheme === "light" || savedTheme === "dark") setTheme(savedTheme);
-    else if (window.matchMedia("(prefers-color-scheme: light)").matches) setTheme("light");
-  }, []);
 
-  useEffect(() => {
-    document.documentElement.dataset.theme = theme;
-    window.localStorage.setItem("faultline-theme", theme);
-  }, [theme]);
 
-  const themeLabel = theme === "dark" ? "Use light theme" : "Use dark theme";
-
-  return <main className="app-shell help-shell">
-    <header className="topbar">
-      <div className="brand"><span className="brand-mark">F</span><span>FAULTLINE</span></div>
-      <nav className="module-nav" aria-label="Faultline modules"><Link href="/">Survey</Link><Link href="/restore">Restore</Link><Link className="active" href="/help">Help</Link></nav>
-      <div className="topbar-actions"><span className="environment"><i />LOCAL CONTROL PLANE</span><button className="theme-toggle" type="button" onClick={() => setTheme(theme === "dark" ? "light" : "dark")} aria-label={themeLabel} title={themeLabel}>{theme === "dark" ? "☼" : "◐"}</button></div>
-    </header>
+  return <main id="main-content" className="app-shell help-shell">
 
     <section className="page-heading">
       <div><p className="eyebrow">HELP / HOW IT WORKS</p><h1>From outage to safe recovery</h1><p className="lede">Faultline separates impact analysis from message recovery, then keeps every decision visible in backend-owned evidence.</p></div>
