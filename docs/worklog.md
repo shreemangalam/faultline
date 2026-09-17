@@ -150,3 +150,9 @@ This is a concise, versioned record of shipped engineering decisions. It is inte
 - Added repeatable browser verification and real application screenshots; refined compact layouts, mobile priority visibility and connection feedback.
 - Kept all original 135 records and their state distribution intact; unrelated scenario submissions increased the development total to 353. Final curated showcase uses a fresh separate 39-event database; workers remain disabled.
 - TypeScript, production builds, Compose validation and relevant Maven verification pass. Details and screenshots are in the dated console QA log.
+
+## 2026-09-18 — Inspector context corrections
+
+- Fixed stale details after filtering and retained scroll when changing inspected messages.
+- Preserved same-message reading position during refresh and made prerequisite navigation reveal its destination.
+- TypeScript, production build and targeted browser regressions passed; see the dated inspector context log.
