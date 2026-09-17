@@ -52,10 +52,12 @@ services:
       dockerfile: dashboard/Dockerfile
       args:
         SURVEY_API_URL: http://survey:8081
+        RESTORE_API_URL: http://restore:8082
     environment:
       SURVEY_API_URL: http://survey:8081
-    depends_on: [survey]
-    ports: ["3000:3000"]
+      RESTORE_API_URL: http://restore:8082
+    depends_on: [survey, restore]
+    ports: ["${DASHBOARD_PORT:-3000}:3000"]
 
 volumes:
   postgres-data:

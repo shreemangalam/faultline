@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { LandscapeGraph } from "../components/landscape-graph";
 
@@ -74,7 +75,7 @@ export default function SurveyDashboard() {
 
   return <main className="app-shell">
     <header className="topbar">
-      <div className="brand"><span className="brand-mark">F</span><span>FAULTLINE</span><span className="module-name">/ SURVEY</span></div>
+      <div className="brand"><span className="brand-mark">F</span><span>FAULTLINE</span></div><nav className="module-nav" aria-label="Faultline modules"><Link className="active" href="/">Survey</Link><Link href="/restore">Restore</Link></nav>
       <div className="topbar-actions"><span className="environment"><i />LOCAL LANDSCAPE</span><button className="theme-toggle" type="button" onClick={() => setTheme(theme === "dark" ? "light" : "dark")} aria-label={themeLabel} title={themeLabel}>{theme === "dark" ? "☼" : "◐"}</button></div>
     </header>
     <section className="page-heading"><div><p className="eyebrow">SURVEY / ACTIVE LANDSCAPE</p><h1>Integration impact analysis</h1><p className="lede">Trace downstream exposure and establish a safe recovery order from the active landscape.</p></div><div className="landscape-state"><span className="pulse" />ACTIVE TOPOLOGY <strong>{healthMap ? "ONLINE" : "CONNECTING"}</strong></div></section>
