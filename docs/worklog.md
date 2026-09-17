@@ -121,3 +121,9 @@ This is a concise, versioned record of shipped engineering decisions. It is inte
 - Consolidated navigation, local-demo identity and resilient theme preference handling across all three pages.
 - Established a coherent light/dark visual system with readable typography and keyboard focus treatment.
 - Verified TypeScript and the production dashboard build.
+
+## 2026-09-17 — Survey incident workspace
+
+- Rebuilt Survey around topology focus, connection metadata and a coherent incident assessment with backend priorities and recovery warnings.
+- Added keyboard selection semantics and explicit selected-origin/report context.
+- Verified TypeScript and production build.
