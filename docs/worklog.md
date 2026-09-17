@@ -105,3 +105,8 @@ This is a concise, versioned record of shipped engineering decisions. It is inte
 - Added a live recovery console for queue state, aggregate statistics, target circuits, persisted event evidence, and repeatable scenario controls.
 - Kept policy in Restore: the browser renders backend reasons and uses SSE only to trigger debounced PostgreSQL-backed snapshots.
 - Verified TypeScript, the Next.js production build, both container proxies, SSE readiness, and an unchanged 135-event database with the automatic worker disabled.
+
+## 2026-09-17 — Operator help
+
+- Added an in-dashboard Help / How It Works guide covering the Survey-to-Restore workflow, recovery states, safe demo steps, and service boundaries.
+- Linked Help from both modules and kept operational guidance explicit that scenarios write local data while the scheduled worker remains disabled by default.
