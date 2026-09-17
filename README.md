@@ -48,3 +48,7 @@ docker compose -f infra/compose.yaml up --build
 Open the operator dashboard at `http://localhost:3000`. The Survey API listens on `http://localhost:8081`; its versioned contract is [here](docs/api/survey-openapi.json). Restore listens on `http://localhost:8082` and persists recovery events locally. Automatic Restore delivery is disabled by default; set `RESTORE_WORKER_ENABLED=true` only when that process should execute eligible queue data.
 
 Run the isolated recovery benchmark with `./scripts/benchmark-restore.ps1`. It defaults to 50,000 events and removes its dedicated containers and database volume after verification.
+
+## Curated operations walkthrough
+
+Use the [isolated operations demo](docs/worklog/2026-09-17-operations-demo.md) for the 39-message Salesforce outage narrative on port 3002. It has a separate PostgreSQL volume and keeps the existing development database intact. Automatic delivery remains disabled; recovery is manual and bounded.

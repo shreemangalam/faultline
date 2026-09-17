@@ -23,6 +23,8 @@ server:
   port: ${PORT:8082}
 
 restore:
+  operations-demo:
+    enabled: ${RESTORE_OPERATIONS_DEMO_ENABLED:false}
   worker:
     enabled: ${RESTORE_WORKER_ENABLED:false}
     id: ${RESTORE_WORKER_ID:restore-worker}
