@@ -104,7 +104,7 @@ The suite exposes these repeatable scenario controls:
 
 The isolated benchmark harness has verified 50,000 events with exact attempt and accepted-delivery accounting. Its method, measured p95, throughput, and limitations are recorded in [docs/technical/restore-recovery-benchmark.md](../technical/restore-recovery-benchmark.md).
 
-The dashboard will display event-status counts, attempt history, circuit state, queue depth, processing rate, success/failure rate, and an event timeline. Data comes from the application’s local database and metrics endpoint, not fabricated screenshots. The statistics contract zero-fills every event and attempt state, defines pending depth as all non-terminal events, and reports nearest-rank p95 receipt-to-success latency.
+The dashboard displays event-status counts, attempt history, circuit state, queue depth, success/failure state, and an event timeline. Data comes from the application’s local database and metrics endpoint, not fabricated screenshots. The statistics contract zero-fills every event and attempt state, defines pending depth as all non-terminal events, and reports nearest-rank p95 receipt-to-success latency.
 
 ## Planned API surface
 

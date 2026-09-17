@@ -1,7 +1,9 @@
 FROM node:24-alpine AS build
 WORKDIR /app
 ARG SURVEY_API_URL=http://survey:8081
+ARG RESTORE_API_URL=http://restore:8082
 ENV SURVEY_API_URL=$SURVEY_API_URL
+ENV RESTORE_API_URL=$RESTORE_API_URL
 COPY dashboard/package.json dashboard/package-lock.json ./
 RUN npm ci
 COPY dashboard ./

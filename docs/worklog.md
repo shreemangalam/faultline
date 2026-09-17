@@ -99,3 +99,9 @@ This is a concise, versioned record of shipped engineering decisions. It is inte
 - Added a heartbeat-protected SSE endpoint that emits event-state notifications only after their database transaction commits.
 - Isolated client delivery behind a bounded single-thread dispatcher; retained notifications stay ordered, while overload may discard older invalidations without delaying durable recovery work.
 - Defined snapshot-on-connect and snapshot-on-reconnect semantics so PostgreSQL remains authoritative, and verified the slice with the 66-test reactor plus an isolated Java 21/PostgreSQL lifecycle proof.
+
+## 2026-09-17 — Restore dashboard
+
+- Added a live recovery console for queue state, aggregate statistics, target circuits, persisted event evidence, and repeatable scenario controls.
+- Kept policy in Restore: the browser renders backend reasons and uses SSE only to trigger debounced PostgreSQL-backed snapshots.
+- Verified TypeScript, the Next.js production build, both container proxies, SSE readiness, and an unchanged 135-event database with the automatic worker disabled.
