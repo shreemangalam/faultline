@@ -138,3 +138,8 @@ This is a concise, versioned record of shipped engineering decisions. It is inte
 
 - Added a five-minute Survey-to-Restore path with real demo references, bounded recovery instructions and discoverable technical boundaries.
 - Verified TypeScript and production build.
+
+## 2026-09-18 — Browser stream delivery
+
+- Browser QA found gzip buffering on the Next.js SSE proxy; added no-transform to preserve immediate delivery.
+- Verified the lifecycle integration test and compressed-client readiness through the rebuilt real proxy. SSE semantics remain unchanged.

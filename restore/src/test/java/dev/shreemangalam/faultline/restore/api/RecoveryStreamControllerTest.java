@@ -70,6 +70,7 @@ class RecoveryStreamControllerTest {
         assertThat(response.headers().firstValue("Content-Type")).hasValueSatisfying(
                 value -> assertThat(value).startsWith("text/event-stream"));
         assertThat(response.headers().firstValue("X-Accel-Buffering")).contains("no");
+        assertThat(response.headers().firstValue("Cache-Control")).contains("no-cache, no-transform");
 
         try (InputStream body = response.body();
              BufferedReader reader = new BufferedReader(new InputStreamReader(body, StandardCharsets.UTF_8))) {
