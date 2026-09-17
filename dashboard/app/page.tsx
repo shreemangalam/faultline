@@ -16,7 +16,6 @@ type Report = {
   warnings: string[];
 };
 
-type Theme = "dark" | "light";
 const api = "/api/survey/v1";
 
 export default function SurveyDashboard() {
@@ -27,18 +26,7 @@ export default function SurveyDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [theme, setTheme] = useState<Theme>("dark");
 
-  useEffect(() => {
-    const savedTheme = window.localStorage.getItem("faultline-theme");
-    if (savedTheme === "light" || savedTheme === "dark") setTheme(savedTheme);
-    else if (window.matchMedia("(prefers-color-scheme: light)").matches) setTheme("light");
-  }, []);
-
-  useEffect(() => {
-    document.documentElement.dataset.theme = theme;
-    window.localStorage.setItem("faultline-theme", theme);
-  }, [theme]);
 
   useEffect(() => {
     Promise.all([fetch(`${api}/landscape/health-map`), fetch(`${api}/landscape/warnings`)])
@@ -71,13 +59,8 @@ export default function SurveyDashboard() {
 
   const selectedSystem = useMemo(() => healthMap?.systems.find((system) => system.systemId === selectedSystemId), [healthMap, selectedSystemId]);
   const criticalCount = useMemo(() => report?.priorities.filter((priority) => priority.severity === "CRITICAL").length ?? 0, [report]);
-  const themeLabel = theme === "dark" ? "Use light theme" : "Use dark theme";
 
-  return <main className="app-shell">
-    <header className="topbar">
-      <div className="brand"><span className="brand-mark">F</span><span>FAULTLINE</span></div><nav className="module-nav" aria-label="Faultline modules"><Link className="active" href="/">Survey</Link><Link href="/restore">Restore</Link><Link href="/help">Help</Link></nav>
-      <div className="topbar-actions"><span className="environment"><i />LOCAL LANDSCAPE</span><button className="theme-toggle" type="button" onClick={() => setTheme(theme === "dark" ? "light" : "dark")} aria-label={themeLabel} title={themeLabel}>{theme === "dark" ? "☼" : "◐"}</button></div>
-    </header>
+  return <main id="main-content" className="app-shell">
     <section className="page-heading"><div><p className="eyebrow">SURVEY / ACTIVE LANDSCAPE</p><h1>Integration impact analysis</h1><p className="lede">Trace downstream exposure and establish a safe recovery order from the active landscape.</p></div><div className="landscape-state"><span className="pulse" />ACTIVE TOPOLOGY <strong>{healthMap ? "ONLINE" : "CONNECTING"}</strong></div></section>
     {error && <p className="error" role="alert">{error}</p>}
     {loading && <p className="loading">Connecting to the active landscape…</p>}
