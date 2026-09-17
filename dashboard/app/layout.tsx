@@ -3,7 +3,7 @@ import "./styles.css";
 import { AppShell } from "../components/app-shell";
 
 export const metadata: Metadata = {
-  title: "Faultline Control Plane",
+  title: "Survey landscape | Faultline",
   description: "Integration impact analysis and durable recovery operations"
 };
 

@@ -22,7 +22,15 @@ const filters: Array<"ALL" | EventState> = ["ALL", "ELIGIBLE", "BLOCKED", "RETRY
 const labels: Record<string, string> = { ALL: "All events", ELIGIBLE: "Ready", BLOCKED: "Blocked", RETRY_SCHEDULED: "Retry waiting", IN_PROGRESS: "In progress", COMPLETED: "Completed", FAILED_FINAL: "Final failure", FAILED_DEPENDENCY: "Dependency failed", EXHAUSTED: "Exhausted", RECEIVED: "Received", OPEN: "Open", HALF_OPEN: "Probe in progress", CLOSED: "Closed" };
 const targets: Record<string, string> = { SALESFORCE: "Salesforce", LEGACY_WMS: "Legacy WMS", SAP_S4_FINANCE: "SAP S/4 Finance", BANK_GATEWAY: "Bank Gateway", CARRIER_API: "Carrier API", CUSTOMER_PORTAL: "Customer Portal" };
 const steps: Record<string, string> = { "cpi-order-sync": "CPI order synchronization", "inventory-reservation": "Inventory reservation", "payment-capture": "Payment capture", "invoice-posting": "Invoice posting", "shipment-booking": "Shipment booking", "order-confirmation": "Order confirmation", "customer-update-invalid": "Customer update · invalid payload", "customer-confirmation": "Customer confirmation", "order-settlement": "Order settlement" };
-const targetName = (value: string) => targets[value] ?? value.replaceAll("_", " ");
+function targetName(value: string) {
+  if (targets[value]) return targets[value];
+  const proof = value.match(/^(OUTAGE|ERP_PRIORITY|LIVE_CIRCUIT|PERMANENT_PROBE|CRM_INVALID|ERP_UNAVAILABLE|CRM|ERP|WMS|PAYMENTS|TMS|OPERATIONS|NOTIFICATIONS|ERP_RECON)_([A-F0-9]+)$/);
+  if (proof) {
+    const names: Record<string, string> = { OUTAGE: "Outage simulator", ERP_PRIORITY: "Priority demo", LIVE_CIRCUIT: "Circuit proof", PERMANENT_PROBE: "Permanent-failure proof", CRM_INVALID: "Validation demo", ERP_UNAVAILABLE: "Unavailable ERP" };
+    return (names[proof[1]] ?? proof[1].replaceAll("_", " ") + " demo") + " · " + proof[2].slice(0, 4);
+  }
+  return value.replaceAll("_", " ");
+}
 function messageName(event: RecoveryEvent) {
   const step = event.payloadReference.split("/").at(-1) ?? "";
   return event.payloadReference.startsWith("demo://operations/") ? steps[step] ?? step : "Message to " + targetName(event.targetSystem);
@@ -70,7 +78,7 @@ export default function RestoreDashboard() {
       setSelectedEventId(current => current && eventBody.some(item => item.eventId === current) ? current : rankEvents(eventBody)[0]?.eventId ?? null);
       setError(null);
     } catch (reason) {
-      if (version === requestVersion.current) setError(reason instanceof Error ? reason.message : "Restore snapshot failed.");
+      if (version === requestVersion.current) setError("Restore is unavailable. The last loaded snapshot is retained; reconnect or refresh to try again.");
     } finally { if (version === requestVersion.current) setLoading(false); }
   }, []);
 
@@ -104,7 +112,7 @@ export default function RestoreDashboard() {
     setNotice(null);
     try {
       const response = await fetch(api + request.path, { method: "POST", headers: request.body ? { "Content-Type": "application/json" } : undefined, body: request.body ? JSON.stringify(request.body) : undefined });
-      if (!response.ok) throw new Error(request.name + " was rejected (HTTP " + response.status + "). The operations loader requires an empty isolated demo database.");
+      if (!response.ok) throw new Error(request.name + " could not complete (HTTP " + response.status + "). " + (request.path === "/scenarios/operations-demo" && response.status === 409 ? "Loading requires an empty isolated demo database." : "Refresh the queue before trying again."));
       const result = await response.json();
       setNotice(Array.isArray(result) ? request.name + ": " + result.length + " event(s) executed. Inspect the updated states and evidence below." : request.path.endsWith("/recover") ? "Salesforce simulator now accepts deliveries. Circuit cooldown still applies; run one bounded batch to admit a probe." : request.name + " finished. The queue snapshot has been refreshed.");
       await loadSnapshot();
@@ -161,7 +169,7 @@ export default function RestoreDashboard() {
         <div className="panel queue-panel"><div className="panel-heading"><div><h2>Recovery queue <span className="count-label">{statistics.totalEvents}</span></h2><p className="panel-description">Pending first, then priority and deadline. Execution order is decided by Restore.</p></div><label className="queue-search"><span className="sr-only">Search messages</span><input value={query} onChange={event => setQuery(event.target.value)} placeholder="Search order, target or ID" type="search" /></label></div>
           <div className="filter-row" role="group" aria-label="Filter recovery queue">{filters.filter(state => state === "ALL" || state === filter || (statistics.eventCounts[state] ?? 0) > 0).map(state => <button aria-pressed={filter === state} className={filter === state ? "active" : ""} key={state} onClick={() => setFilter(state)}>{labels[state]} <span>{state === "ALL" ? statistics.totalEvents : statistics.eventCounts[state]}</span></button>)}</div>
           <div className="table-wrap"><table className="queue-table"><thead><tr><th scope="col">Message / business reference</th><th scope="col">State</th><th scope="col">Priority / timing</th></tr></thead><tbody>{visibleEvents.map(event => <tr key={event.eventId} className={event.eventId === selectedEventId ? "selected" : ""} onClick={() => selectEvent(event.eventId)}>
-            <td><button aria-pressed={event.eventId === selectedEventId} aria-controls="event-evidence" onClick={click => { click.stopPropagation(); selectEvent(event.eventId); }}><span>{messageName(event)}</span><small>{correlationName(event.correlationId)}</small></button><span className="row-target">{targetName(event.targetSystem)}</span></td>
+            <td><button aria-pressed={event.eventId === selectedEventId} aria-controls="event-evidence" onClick={click => { click.stopPropagation(); selectEvent(event.eventId); }}><span>{messageName(event)}<b className="mobile-priority">P{event.priority}</b></span><small>{correlationName(event.correlationId)}</small></button><span className="row-target">{targetName(event.targetSystem)}</span></td>
             <td><StateBadge state={event.state} /><small className="row-caption">{event.state === "BLOCKED" ? event.prerequisiteEventIds.length + " prerequisite(s)" : event.attemptCount + " attempt(s)"}</small></td>
             <td><span className={"priority " + (event.priority === 1 ? "urgent" : "")}>P{event.priority}</span><small className="row-caption">{terminalStates.has(event.state) ? "Finished" : event.deadlineAt ? deadlineText(event.deadlineAt, now) : event.state === "BLOCKED" ? "Awaiting release" : event.state === "IN_PROGRESS" ? "Worker lease active" : "Eligible " + relativeTime(event.nextEligibleAt, now)}</small></td>
           </tr>)}</tbody></table></div>

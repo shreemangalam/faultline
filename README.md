@@ -17,7 +17,7 @@ It contains two linked backend modules and one operator dashboard:
 
 ## Status
 
-Survey is a complete, containerised impact-analysis module. Restore now has durable event intake, dependency-aware release and terminal-failure propagation, worker leases, bounded retries with jittered exponential backoff, persisted target circuits, queryable attempt history and aggregate statistics, a controllable downstream simulator, timeout-bound HTTP execution, opt-in automatic batch scheduling, repeatable scenarios, and an assertion-driven 50,000-event recovery benchmark. Restore now also emits post-commit SSE live-state notifications, and the dashboard exposes its queue, statistics, circuits, event evidence, and scenario controls; the operator-facing Help / How It Works guide is now included, and dedicated UI polish follows. The public design baseline is available in [`docs/planning`](docs/planning).
+Survey is a complete, containerised impact-analysis module. Restore now has durable event intake, dependency-aware release and terminal-failure propagation, worker leases, bounded retries with jittered exponential backoff, persisted target circuits, queryable attempt history and aggregate statistics, a controllable downstream simulator, timeout-bound HTTP execution, opt-in automatic batch scheduling, repeatable scenarios, and an assertion-driven 50,000-event recovery benchmark. Restore now also emits post-commit SSE live-state notifications, and the dashboard exposes its queue, statistics, circuits, event evidence, and scenario controls; the polished Survey incident workspace, Restore operations console and five-minute operator guide are included in both light and dark themes. The public design baseline is available in [`docs/planning`](docs/planning).
 
 No real SAP, CPI, Salesforce, customer data, or credentials are used. All demo systems and payloads are fictional and run locally.
 
@@ -52,3 +52,11 @@ Run the isolated recovery benchmark with `./scripts/benchmark-restore.ps1`. It d
 ## Curated operations walkthrough
 
 Use the [isolated operations demo](docs/worklog/2026-09-17-operations-demo.md) for the 39-message Salesforce outage narrative on port 3002. It has a separate PostgreSQL volume and keeps the existing development database intact. Automatic delivery remains disabled; recovery is manual and bounded.
+
+## Operations console
+
+The dashboard focuses on incident exposure and recoverable business work, with a topology inspector, backend-ranked recovery assessment, counted queue filters, message-level evidence and separately confirmed demo tools. The curated scenario uses real HTTP execution and PostgreSQL evidence rather than fabricated metrics.
+
+![Restore operations console](docs/evidence/2026-09-18/restore-light.png)
+
+See the [visual and interaction verification](docs/worklog/2026-09-18-console-qa.md) for dark-theme, topology and guide captures, browser test instructions and data-preservation details.
