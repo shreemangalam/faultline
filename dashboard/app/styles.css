@@ -346,3 +346,31 @@ summary { cursor:pointer; font-weight:600; }
 @media (max-width:1200px) { .summary-measures > div { padding:8px 12px; } .queue-workspace { grid-template-columns:minmax(0,1fr) 320px; } .queue-panel > .panel-heading { align-items:flex-start; flex-direction:column; } .queue-search { width:100%; } .summary-bottom { gap:14px; } .summary-bottom > strong { flex-direction:column; align-items:flex-start; gap:5px; } }
 @media (max-width:1000px) { .operations-summary { grid-template-columns:1fr; } .summary-measures { border-left:0; border-top:1px solid var(--line); padding:10px; } .target-strip { grid-template-columns:repeat(3,minmax(0,1fr)); } .queue-workspace { grid-template-columns:1fr; } .evidence-panel { max-height:none; } .queue-panel > .panel-heading { flex-direction:row; } .queue-search { width:230px; } }
 @media (max-width:760px) { .heading-actions { width:100%; justify-content:space-between; } .incident-overview { padding:20px; } .incident-overview h2 { font-size:21px; } .summary-measures { gap:0; padding:8px 0; } .summary-measures > div { padding:8px 12px; } .summary-measures strong { font-size:24px; } .summary-measures span { font-size:11px; } .summary-measures p { font-size:10px; } .summary-bottom > strong { flex-direction:row; align-items:baseline; } .summary-bottom { flex-wrap:wrap; } .summary-bottom > span { border:0; padding:0; } .deadline-strip { flex-wrap:wrap; gap:8px; } .deadline-strip > span:not(.priority) { flex-basis:100%; } .deadline-strip button { margin:0; padding:0; } .target-strip { grid-template-columns:repeat(2,minmax(0,1fr)); } .target-card p { font-size:11px; } .queue-panel > .panel-heading { flex-direction:column; } .queue-search { width:100%; } .queue-table { min-width:0; font-size:12px; } .queue-table td,.queue-table th { padding:12px 8px; } .queue-table td:first-child { width:55%; padding-left:16px; } .queue-table th:first-child { padding-left:16px; } .queue-table td:last-child,.queue-table th:last-child { display:none; } .queue-table .state-badge { white-space:normal; font-size:10px; } .queue-table td button span { font-size:12px; } .demo-tools > summary { flex-wrap:wrap; gap:8px; padding:16px; } .demo-safety { display:none; } .demo-content { padding:0 16px 16px; } }
+
+/* Operator walkthrough */
+.guide-duration { padding:7px 12px; color:var(--accent); border:1px solid var(--line); border-radius:30px; font-size:12px; }
+.guide-intro { display:grid; grid-template-columns:1fr 310px; gap:50px; align-items:center; padding:30px; margin-bottom:28px; }
+.guide-intro h2 { font-size:26px; margin-bottom:10px; }
+.guide-intro p:last-child { color:var(--muted); font-size:14px; line-height:1.8; margin:0; max-width:750px; }
+.guide-start { display:grid; gap:14px; border-left:1px solid var(--line); padding-left:30px; }
+.guide-start > span { font-size:12px; color:var(--muted); }
+.guide-start > a:last-child { font-size:12px; text-align:center; }
+.guide-workspace { display:grid; grid-template-columns:1.5fr 1fr; gap:24px; align-items:start; }
+.guide-workspace .help-panel { padding:28px; }
+.guide-workspace .operator-checklist li { padding-bottom:26px; }
+.guide-workspace .operator-checklist li:last-child { padding-bottom:0; }
+.operator-checklist strong small { display:inline-block; margin-left:10px; font-weight:400; color:var(--quiet); font-size:11px; }
+.guide-reference h2 { margin-bottom:10px; }
+.guide-reference p { color:var(--muted); font-size:13px; line-height:1.8; }
+.guide-reference .warning p { color:var(--warning); font-size:12px; }
+.guide-link { display:block; margin-top:20px; font-size:13px; font-weight:600; text-decoration:none; }
+.guide-note { padding:24px 28px; }
+.guide-note p { margin:0; }
+.guide-disclosures { display:grid; gap:12px; margin-top:26px; }
+.guide-disclosures summary { padding:20px 24px; }
+.guide-disclosures summary small { margin-left:20px; color:var(--muted); font-weight:400; }
+.guide-disclosures .status-guide,.reference-copy { padding:0 24px 24px; }
+.reference-copy p { color:var(--muted); font-size:13px; line-height:1.8; }
+.reference-copy strong { color:var(--text); }
+@media(max-width:1000px) { .guide-intro { grid-template-columns:1fr; gap:24px; } .guide-start { padding:0; border:0; max-width:300px; } }
+@media(max-width:760px) { .guide-intro,.guide-workspace .help-panel { padding:20px; } .guide-intro h2 { font-size:23px; } .guide-workspace { grid-template-columns:1fr; } .operator-checklist strong small { display:block; margin:5px 0 0; } .guide-disclosures summary small { display:block; margin:6px 0 0 16px; } }

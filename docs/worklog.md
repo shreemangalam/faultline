@@ -133,3 +133,8 @@ This is a concise, versioned record of shipped engineering decisions. It is inte
 - Rebuilt monitoring around the active target incident, pending work, terminal failures and real recovery latency.
 - Added searchable counted queue filters, a full message inspector and separately confirmed local demo tools.
 - Verified TypeScript/build and the real 39-event PostgreSQL demo; preserved database remains at 135 events.
+
+## 2026-09-18 — Operator walkthrough
+
+- Added a five-minute Survey-to-Restore path with real demo references, bounded recovery instructions and discoverable technical boundaries.
+- Verified TypeScript and production build.
