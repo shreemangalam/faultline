@@ -23,11 +23,12 @@ services:
       POSTGRES_PASSWORD: benchmark-only
       RESTORE_WORKER_ENABLED: "false"
       RESTORE_RETRY_JITTER_WINDOW: 0s
+      FAULTLINE_API_KEY: ${FAULTLINE_API_KEY:-local-development-only}
     depends_on:
       postgres:
         condition: service_healthy
     ports:
-      - "${RESTORE_BENCHMARK_PORT:-18082}:8082"
+      - "127.0.0.1:${RESTORE_BENCHMARK_PORT:-18082}:8082"
 
 volumes:
   benchmark-postgres-data:

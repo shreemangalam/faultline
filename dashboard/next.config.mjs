@@ -1,12 +1,14 @@
-const surveyApi = process.env.SURVEY_API_URL ?? "http://localhost:8081";
-const restoreApi = process.env.RESTORE_API_URL ?? "http://localhost:8082";
+const securityHeaders = [
+  { key: "Content-Security-Policy", value: "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'" },
+  { key: "Referrer-Policy", value: "no-referrer" },
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  { key: "X-Frame-Options", value: "DENY" },
+  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" }
+];
 
 const nextConfig = {
-  async rewrites() {
-    return [
-      { source: "/api/survey/:path*", destination: `${surveyApi}/api/:path*` },
-      { source: "/api/restore/:path*", destination: `${restoreApi}/api/:path*` }
-    ];
+  async headers() {
+    return [{ source: "/(.*)", headers: securityHeaders }];
   }
 };
 

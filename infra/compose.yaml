@@ -6,7 +6,7 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-faultline}
       POSTGRES_USER: ${POSTGRES_USER:-faultline}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me-locally}
-    ports: ["5432:5432"]
+    ports: ["127.0.0.1:5432:5432"]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 5s
@@ -22,10 +22,11 @@ services:
       SURVEY_DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-faultline}
       POSTGRES_USER: ${POSTGRES_USER:-faultline}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me-locally}
+      FAULTLINE_API_KEY: ${FAULTLINE_API_KEY:-local-development-only}
     depends_on:
       postgres:
         condition: service_healthy
-    ports: ["8081:8081"]
+    ports: ["127.0.0.1:8081:8081"]
 
   restore:
     build:
@@ -42,10 +43,11 @@ services:
       RESTORE_WORKER_FIXED_DELAY: ${RESTORE_WORKER_FIXED_DELAY:-1s}
       RESTORE_WORKER_INITIAL_DELAY: ${RESTORE_WORKER_INITIAL_DELAY:-1s}
       RESTORE_RETRY_JITTER_WINDOW: ${RESTORE_RETRY_JITTER_WINDOW:-2s}
+      FAULTLINE_API_KEY: ${FAULTLINE_API_KEY:-local-development-only}
     depends_on:
       postgres:
         condition: service_healthy
-    ports: ["8082:8082"]
+    ports: ["127.0.0.1:8082:8082"]
   dashboard:
     build:
       context: ..
@@ -56,8 +58,10 @@ services:
     environment:
       SURVEY_API_URL: http://survey:8081
       RESTORE_API_URL: http://restore:8082
+      SURVEY_API_KEY: ${FAULTLINE_API_KEY:-local-development-only}
+      RESTORE_API_KEY: ${FAULTLINE_API_KEY:-local-development-only}
     depends_on: [survey, restore]
-    ports: ["${DASHBOARD_PORT:-3000}:3000"]
+    ports: ["127.0.0.1:${DASHBOARD_PORT:-3000}:3000"]
 
 volumes:
   postgres-data:

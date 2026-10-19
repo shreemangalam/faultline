@@ -20,9 +20,11 @@ services:
       SURVEY_DB_URL: jdbc:postgresql://postgres:5432/faultline_operations
       POSTGRES_USER: faultline
       POSTGRES_PASSWORD: operations-demo-only
+      FAULTLINE_API_KEY: ${FAULTLINE_API_KEY:-local-development-only}
     depends_on:
       postgres:
         condition: service_healthy
+    ports: ["127.0.0.1:${OPERATIONS_SURVEY_PORT:-18081}:8081"]
   restore:
     build:
       context: ..
@@ -33,10 +35,11 @@ services:
       POSTGRES_PASSWORD: operations-demo-only
       RESTORE_WORKER_ENABLED: "false"
       RESTORE_OPERATIONS_DEMO_ENABLED: "true"
+      FAULTLINE_API_KEY: ${FAULTLINE_API_KEY:-local-development-only}
     depends_on:
       postgres:
         condition: service_healthy
-    ports: ["18082:8082"]
+    ports: ["127.0.0.1:${OPERATIONS_RESTORE_PORT:-18082}:8082"]
   dashboard:
     build:
       context: ..
@@ -47,7 +50,9 @@ services:
     environment:
       SURVEY_API_URL: http://survey:8081
       RESTORE_API_URL: http://restore:8082
+      SURVEY_API_KEY: ${FAULTLINE_API_KEY:-local-development-only}
+      RESTORE_API_KEY: ${FAULTLINE_API_KEY:-local-development-only}
     depends_on: [survey, restore]
-    ports: ["3002:3000"]
+    ports: ["127.0.0.1:${OPERATIONS_DASHBOARD_PORT:-3002}:3000"]
 volumes:
   operations-data:

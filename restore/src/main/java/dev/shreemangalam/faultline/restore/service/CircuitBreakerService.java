@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public class CircuitBreakerService {
@@ -23,20 +24,26 @@ public class CircuitBreakerService {
     }
 
     @Transactional
-    public boolean allowClaim(String targetSystem, Instant now) {
-        return repository.lockByTargetSystem(targetSystem).map(circuit -> circuit.allowClaim(now)).orElse(true);
+    public boolean allowClaim(String targetSystem, UUID eventId, Instant now, Instant leaseExpiresAt) {
+        return repository.lockByTargetSystem(targetSystem)
+                .map(circuit -> circuit.allowClaim(eventId, now, leaseExpiresAt)).orElse(true);
     }
 
     @Transactional
-    public void recordFailure(String targetSystem, Instant now) {
+    public void recordFailure(String targetSystem, UUID eventId, Instant now) {
         CircuitBreakerEntity circuit = repository.lockByTargetSystem(targetSystem)
                 .orElseGet(() -> repository.save(new CircuitBreakerEntity(targetSystem, now)));
-        circuit.recordFailure(now);
+        circuit.recordFailure(eventId, now);
     }
 
     @Transactional
-    public void recordSuccess(String targetSystem, Instant now) {
-        repository.lockByTargetSystem(targetSystem).ifPresent(circuit -> circuit.recordSuccess(now));
+    public void recordSuccess(String targetSystem, UUID eventId, Instant now) {
+        repository.lockByTargetSystem(targetSystem).ifPresent(circuit -> circuit.recordSuccess(eventId, now));
+    }
+
+    @Transactional
+    public void recordPermanentFailure(String targetSystem, UUID eventId, Instant now) {
+        repository.lockByTargetSystem(targetSystem).ifPresent(circuit -> circuit.recordPermanentFailure(eventId, now));
     }
 
     @Transactional(readOnly = true)

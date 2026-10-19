@@ -1,6 +1,8 @@
 spring:
   application:
     name: faultline-survey
+  autoconfigure:
+    exclude: org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
   datasource:
     url: ${SURVEY_DB_URL:jdbc:postgresql://localhost:5432/faultline}
     username: ${POSTGRES_USER:faultline}
@@ -11,9 +13,20 @@ spring:
       ddl-auto: validate
   flyway:
     enabled: true
+    # Restore may initialize its independently versioned tables first.
+    baseline-on-migrate: true
+    baseline-version: 0
+  mvc:
+    problemdetails:
+      enabled: true
 
 server:
   port: 8081
+
+faultline:
+  security:
+    enabled: ${FAULTLINE_SECURITY_ENABLED:true}
+    api-key: ${FAULTLINE_API_KEY:local-development-only}
 
 management:
   endpoints:

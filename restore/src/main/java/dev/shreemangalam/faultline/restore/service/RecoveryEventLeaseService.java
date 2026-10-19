@@ -61,7 +61,7 @@ public class RecoveryEventLeaseService {
         Instant now = clock.instant();
         Instant leaseExpiresAt = now.plusSeconds(command.leaseSeconds());
         List<RecoveryEventEntity> events = eventRepository.lockClaimable(now, command.maxEvents()).stream()
-                .filter(event -> circuitBreakerService.allowClaim(event.getTargetSystem(), now))
+                .filter(event -> circuitBreakerService.allowClaim(event.getTargetSystem(), event.getId(), now, leaseExpiresAt))
                 .toList();
         List<RecoveryEventAuditEntity> audits = events.stream().map(event -> {
             boolean reclaimed = event.getState() == RecoveryEventState.IN_PROGRESS;
@@ -84,7 +84,7 @@ public class RecoveryEventLeaseService {
         Instant now = clock.instant();
         RecoveryEventEntity event = ownedLease(command.eventId(), command.workerId(), now);
         RecoveryAttemptEntity attempt = activeAttempt(event);
-        circuitBreakerService.recordFailure(event.getTargetSystem(), now);
+        circuitBreakerService.recordFailure(event.getTargetSystem(), event.getId(), now);
         if (event.getAttemptCount() >= 3) {
             attempt.finish(RecoveryAttemptOutcome.EXHAUSTED, command.reason(), command.httpStatus(), command.durationMillis(), now);
             event.exhaust(now);
@@ -106,6 +106,7 @@ public class RecoveryEventLeaseService {
         Instant now = clock.instant();
         RecoveryEventEntity event = ownedLease(command.eventId(), command.workerId(), now);
         activeAttempt(event).finish(RecoveryAttemptOutcome.PERMANENT_FAILURE, command.reason(), command.httpStatus(), command.durationMillis(), now);
+        circuitBreakerService.recordPermanentFailure(event.getTargetSystem(), event.getId(), now);
         event.failFinal(now);
         auditRepository.save(new RecoveryEventAuditEntity(UUID.randomUUID(), event.getId(), RecoveryEventState.FAILED_FINAL, "Permanent failure: " + command.reason(), now));
         stateChangePublisher.publish(event, now);
@@ -118,7 +119,7 @@ public class RecoveryEventLeaseService {
         Instant now = clock.instant();
         RecoveryEventEntity event = ownedLease(command.eventId(), command.workerId(), now);
         activeAttempt(event).finish(RecoveryAttemptOutcome.SUCCEEDED, null, command.httpStatus(), command.durationMillis(), now);
-        circuitBreakerService.recordSuccess(event.getTargetSystem(), now);
+        circuitBreakerService.recordSuccess(event.getTargetSystem(), event.getId(), now);
         event.complete(now);
         auditRepository.save(new RecoveryEventAuditEntity(UUID.randomUUID(), event.getId(), RecoveryEventState.COMPLETED, "Completed by worker " + command.workerId() + ".", now));
         stateChangePublisher.publish(event, now);

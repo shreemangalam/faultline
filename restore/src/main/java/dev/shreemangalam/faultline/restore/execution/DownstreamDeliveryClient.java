@@ -37,6 +37,15 @@ public class DownstreamDeliveryClient {
             return restClient.post()
                     .uri(baseUrl() + "/api/v1/simulator/targets/{targetSystem}/deliveries", event.targetSystem())
                     .header("Idempotency-Key", event.eventId().toString())
+                    .headers(headers -> {
+                        String apiKey = environment.getProperty("restore.downstream.api-key");
+                        // Reuse the operator key only for the built-in, same-service simulator.
+                        if (!StringUtils.hasText(apiKey)
+                                && !StringUtils.hasText(environment.getProperty("restore.downstream.base-url"))) {
+                            apiKey = environment.getProperty("faultline.security.api-key");
+                        }
+                        if (StringUtils.hasText(apiKey)) headers.set("X-Faultline-Api-Key", apiKey);
+                    })
                     .body(new DownstreamDeliveryPayload(event.eventId(), event.correlationId(), event.payloadReference()))
                     .exchange((request, response) -> {
                         StreamUtils.copyToString(response.getBody(), StandardCharsets.UTF_8);

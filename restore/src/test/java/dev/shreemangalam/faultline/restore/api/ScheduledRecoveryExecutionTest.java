@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         properties = {
-                "spring.datasource.url=jdbc:h2:mem:faultline-restore-scheduled;MODE=PostgreSQL;DB_CLOSE_DELAY=-1",
+                "spring.datasource.url=jdbc:tc:postgresql:16-alpine:///faultline-restore-scheduled",
                 "restore.worker.enabled=true",
                 "restore.worker.id=scheduled-integration-worker",
                 "restore.worker.batch-size=1",

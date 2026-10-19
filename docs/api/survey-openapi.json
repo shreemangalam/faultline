@@ -1,35 +1,841 @@
 {
   "openapi": "3.1.0",
-  "info": { "title": "Faultline Survey API", "version": "v1", "description": "Fictional integration-landscape analysis API." },
+  "info": {
+    "title": "Faultline Survey API",
+    "description": "Fictional integration-landscape analysis API. Mutating operations require an operator API key.",
+    "version": "v1"
+  },
   "paths": {
-    "/api/v1/survey/status": { "get": { "operationId": "surveyStatus", "responses": { "200": { "description": "Service status", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Status" } } } } } } },
-    "/api/v1/landscape/health-map": { "get": { "operationId": "landscapeHealthMap", "responses": { "200": { "description": "Active topology", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HealthMap" } } } } } } },
-    "/api/v1/landscape/warnings": { "get": { "operationId": "landscapeWarnings", "responses": { "200": { "description": "Topology warnings", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Warnings" } } } } } } },
-    "/api/v1/landscape/active": { "get": { "operationId": "activeLandscape", "responses": { "200": { "description": "Active imported landscape", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LandscapeImport" } } } }, "404": { "description": "Bundled sample is active" } } } },
-    "/api/v1/landscape/import/validate": { "post": { "operationId": "validateLandscapeImport", "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LandscapeDefinition" } } } }, "responses": { "200": { "description": "Validation result", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ImportValidation" } } } }, "400": { "description": "Invalid input", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ImportValidation" } } } } } } },
-    "/api/v1/landscape/imports": { "post": { "operationId": "storeLandscapeImport", "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LandscapeDefinition" } } } }, "responses": { "201": { "description": "Stored immutable import", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LandscapeImport" } } } }, "400": { "description": "Invalid import" } } } },
-    "/api/v1/landscape/imports/{importId}": { "get": { "operationId": "getLandscapeImport", "parameters": [{ "$ref": "#/components/parameters/ImportId" }], "responses": { "200": { "description": "Stored import", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LandscapeImport" } } } }, "404": { "description": "Not found" } } } },
-    "/api/v1/landscape/imports/{importId}/activate": { "put": { "operationId": "activateLandscapeImport", "parameters": [{ "$ref": "#/components/parameters/ImportId" }], "responses": { "200": { "description": "Active import", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LandscapeImport" } } } }, "404": { "description": "Not found" } } } },
-    "/api/v1/analysis/impact": { "post": { "operationId": "createImpactReport", "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/IncidentRequest" } } } }, "responses": { "201": { "description": "Persisted report", "headers": { "Location": { "schema": { "type": "string", "format": "uri" } } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ImpactReport" } } } }, "404": { "description": "Unknown system" } } } },
-    "/api/v1/analysis/impact/{reportId}": { "get": { "operationId": "getImpactReport", "parameters": [{ "$ref": "#/components/parameters/ReportId" }], "responses": { "200": { "description": "Persisted report", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ImpactReport" } } } }, "404": { "description": "Not found" } } } },
-    "/api/v1/analysis/impact-priorities": { "post": { "operationId": "impactPriorities", "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/IncidentRequest" } } } }, "responses": { "200": { "description": "Ranked priority view", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Priorities" } } } } } } },
-    "/api/v1/analysis/recovery-sequence": { "post": { "operationId": "recoverySequence", "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/IncidentRequest" } } } }, "responses": { "200": { "description": "Safe recovery sequence", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Recovery" } } } } } } }
+    "/api/v1/landscape/imports/{importId}/activate": {
+      "put": {
+        "tags": [
+          "landscape-import-persistence-controller"
+        ],
+        "operationId": "activate",
+        "parameters": [
+          {
+            "name": "importId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoredLandscapeResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "operatorApiKey": []
+          }
+        ],
+        "x-faultline-role": "operator"
+      }
+    },
+    "/api/v1/landscape/imports": {
+      "post": {
+        "tags": [
+          "landscape-import-persistence-controller"
+        ],
+        "operationId": "store",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LandscapeImportValidationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "operatorApiKey": []
+          }
+        ],
+        "x-faultline-role": "operator"
+      }
+    },
+    "/api/v1/landscape/import/validate": {
+      "post": {
+        "tags": [
+          "landscape-import-validation-controller"
+        ],
+        "operationId": "validate",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LandscapeImportValidationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LandscapeImportValidationResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "operatorApiKey": []
+          }
+        ],
+        "x-faultline-role": "operator"
+      }
+    },
+    "/api/v1/analysis/recovery-sequence": {
+      "post": {
+        "tags": [
+          "recovery-sequence-controller"
+        ],
+        "operationId": "plan",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImpactAnalysisRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecoverySequenceResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "operatorApiKey": []
+          }
+        ],
+        "x-faultline-role": "operator"
+      }
+    },
+    "/api/v1/analysis/impact": {
+      "post": {
+        "tags": [
+          "impact-analysis-controller"
+        ],
+        "operationId": "analyze",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImpactAnalysisRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoredImpactReportResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "operatorApiKey": []
+          }
+        ],
+        "x-faultline-role": "operator"
+      }
+    },
+    "/api/v1/analysis/impact-priorities": {
+      "post": {
+        "tags": [
+          "impact-priority-controller"
+        ],
+        "operationId": "prioritize",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImpactAnalysisRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImpactPriorityResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "operatorApiKey": []
+          }
+        ],
+        "x-faultline-role": "operator"
+      }
+    },
+    "/api/v1/survey/status": {
+      "get": {
+        "tags": [
+          "survey-status-controller"
+        ],
+        "operationId": "status",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SurveyStatusResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/landscape/warnings": {
+      "get": {
+        "tags": [
+          "landscape-warning-controller"
+        ],
+        "operationId": "warnings",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WarningResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/landscape/imports/{importId}": {
+      "get": {
+        "tags": [
+          "landscape-import-persistence-controller"
+        ],
+        "operationId": "findById",
+        "parameters": [
+          {
+            "name": "importId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoredLandscapeResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/landscape/health-map": {
+      "get": {
+        "tags": [
+          "landscape-health-map-controller"
+        ],
+        "operationId": "healthMap",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LandscapeHealthMapResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/landscape/active": {
+      "get": {
+        "tags": [
+          "active-landscape-controller"
+        ],
+        "operationId": "activeLandscape",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoredLandscapeResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analysis/impact/{reportId}": {
+      "get": {
+        "tags": [
+          "impact-analysis-controller"
+        ],
+        "operationId": "findById_1",
+        "parameters": [
+          {
+            "name": "reportId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoredImpactReportResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
   },
   "components": {
-    "parameters": { "ImportId": { "name": "importId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }, "ReportId": { "name": "reportId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } },
     "schemas": {
-      "Status": { "type": "object", "required": ["service", "status"], "properties": { "service": { "type": "string" }, "status": { "type": "string" } } },
-      "IncidentRequest": { "type": "object", "required": ["systemId", "degradationType"], "properties": { "systemId": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]{1,63}$" }, "degradationType": { "type": "string", "enum": ["COMPLETE_OUTAGE"] } } },
-      "System": { "type": "object", "required": ["systemId", "label", "criticality"], "properties": { "systemId": { "type": "string" }, "label": { "type": "string" }, "criticality": { "type": "integer", "minimum": 1, "maximum": 10 }, "health": { "type": "string" } } },
-      "Integration": { "type": "object", "required": ["integrationId", "sourceSystemId", "targetSystemId", "protocol", "dataDomain", "slaClass"], "properties": { "integrationId": { "type": "string" }, "sourceSystemId": { "type": "string" }, "targetSystemId": { "type": "string" }, "protocol": { "type": "string" }, "dataDomain": { "type": "string" }, "slaClass": { "type": "string", "enum": ["REAL_TIME", "NEAR_REAL_TIME", "BATCH"] } } },
-      "LandscapeDefinition": { "type": "object", "required": ["systems", "integrations"], "properties": { "systems": { "type": "array", "items": { "$ref": "#/components/schemas/System" } }, "integrations": { "type": "array", "items": { "$ref": "#/components/schemas/Integration" } } } },
-      "LandscapeImport": { "allOf": [{ "$ref": "#/components/schemas/LandscapeDefinition" }, { "type": "object", "required": ["importId", "createdAt"], "properties": { "importId": { "type": "string", "format": "uuid" }, "createdAt": { "type": "string", "format": "date-time" } } }] },
-      "HealthMap": { "type": "object", "properties": { "systems": { "type": "array", "items": { "$ref": "#/components/schemas/System" } }, "integrations": { "type": "array", "items": { "$ref": "#/components/schemas/Integration" } } } },
-      "Warnings": { "type": "object", "required": ["warnings"], "properties": { "warnings": { "type": "array", "items": { "type": "string" } } } },
-      "ImportValidation": { "type": "object", "required": ["valid", "issues"], "properties": { "valid": { "type": "boolean" }, "issues": { "type": "array", "items": { "type": "object" } } } },
-      "Priorities": { "type": "object", "properties": { "failedSystemId": { "type": "string" }, "priorities": { "type": "array", "items": { "type": "object" } } } },
-      "Recovery": { "type": "object", "required": ["recoverySequence", "cycleWarning", "unresolvedSystemIds"], "properties": { "recoverySequence": { "type": "array", "items": { "type": "string" } }, "cycleWarning": { "type": "boolean" }, "unresolvedSystemIds": { "type": "array", "items": { "type": "string" } } } },
-      "ImpactReport": { "type": "object", "required": ["reportId", "createdAt", "landscapeReference", "incident", "affectedSystems", "affectedIntegrations", "priorities", "recovery", "warnings"], "properties": { "reportId": { "type": "string", "format": "uuid" }, "createdAt": { "type": "string", "format": "date-time" }, "landscapeReference": { "type": "string" }, "incident": { "$ref": "#/components/schemas/IncidentRequest" }, "affectedSystems": { "type": "array", "items": { "type": "object" } }, "affectedIntegrations": { "type": "array", "items": { "$ref": "#/components/schemas/Integration" } }, "priorities": { "type": "array", "items": { "type": "object" } }, "recovery": { "$ref": "#/components/schemas/Recovery" }, "warnings": { "type": "array", "items": { "type": "string" } } } }
+      "IntegrationResponse": {
+        "type": "object",
+        "properties": {
+          "integrationId": {
+            "type": "string"
+          },
+          "sourceSystemId": {
+            "type": "string"
+          },
+          "targetSystemId": {
+            "type": "string"
+          },
+          "protocol": {
+            "type": "string"
+          },
+          "dataDomain": {
+            "type": "string"
+          },
+          "slaClass": {
+            "type": "string"
+          }
+        }
+      },
+      "StoredLandscapeResponse": {
+        "type": "object",
+        "properties": {
+          "importId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "systems": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SystemResponse"
+            }
+          },
+          "integrations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IntegrationResponse"
+            }
+          }
+        }
+      },
+      "SystemResponse": {
+        "type": "object",
+        "properties": {
+          "systemId": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "criticality": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "IntegrationRequest": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "sourceSystemId": {
+            "type": "string"
+          },
+          "targetSystemId": {
+            "type": "string"
+          },
+          "protocol": {
+            "type": "string"
+          },
+          "dataDomain": {
+            "type": "string"
+          },
+          "slaClass": {
+            "type": "string"
+          }
+        }
+      },
+      "LandscapeImportValidationRequest": {
+        "type": "object",
+        "properties": {
+          "systems": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SystemRequest"
+            }
+          },
+          "integrations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IntegrationRequest"
+            }
+          }
+        }
+      },
+      "SystemRequest": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "criticality": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "LandscapeImportValidationResponse": {
+        "type": "object",
+        "properties": {
+          "valid": {
+            "type": "boolean"
+          },
+          "systemCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "integrationCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "issues": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ValidationIssueResponse"
+            }
+          }
+        }
+      },
+      "ValidationIssueResponse": {
+        "type": "object",
+        "properties": {
+          "field": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "ImpactAnalysisRequest": {
+        "type": "object",
+        "properties": {
+          "systemId": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "[A-Z][A-Z0-9_]{1,63}"
+          },
+          "degradationType": {
+            "type": "string",
+            "enum": [
+              "COMPLETE_OUTAGE"
+            ]
+          }
+        },
+        "required": [
+          "degradationType",
+          "systemId"
+        ]
+      },
+      "RecoverySequenceResponse": {
+        "type": "object",
+        "properties": {
+          "failedSystemId": {
+            "type": "string"
+          },
+          "recoverySequence": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "cycleWarning": {
+            "type": "boolean"
+          },
+          "unresolvedSystemIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "AffectedIntegration": {
+        "type": "object",
+        "properties": {
+          "integrationId": {
+            "type": "string"
+          },
+          "sourceSystemId": {
+            "type": "string"
+          },
+          "targetSystemId": {
+            "type": "string"
+          },
+          "protocol": {
+            "type": "string"
+          },
+          "dataDomain": {
+            "type": "string"
+          },
+          "slaClass": {
+            "type": "string"
+          },
+          "impactRing": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "AffectedSystem": {
+        "type": "object",
+        "properties": {
+          "systemId": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "impactRing": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "classification": {
+            "type": "string"
+          }
+        }
+      },
+      "Incident": {
+        "type": "object",
+        "properties": {
+          "systemId": {
+            "type": "string"
+          },
+          "degradationType": {
+            "type": "string"
+          }
+        }
+      },
+      "Priority": {
+        "type": "object",
+        "properties": {
+          "systemId": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "impactRing": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "score": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "severity": {
+            "type": "string"
+          },
+          "scoreBreakdown": {
+            "$ref": "#/components/schemas/ScoreBreakdown"
+          }
+        }
+      },
+      "Recovery": {
+        "type": "object",
+        "properties": {
+          "recoverySequence": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "cycleWarning": {
+            "type": "boolean"
+          },
+          "unresolvedSystemIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "ScoreBreakdown": {
+        "type": "object",
+        "properties": {
+          "criticalityPoints": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "fanOutPoints": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "slaPoints": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "proximityPoints": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "StoredImpactReportResponse": {
+        "type": "object",
+        "properties": {
+          "reportId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "landscapeReference": {
+            "type": "string"
+          },
+          "incident": {
+            "$ref": "#/components/schemas/Incident"
+          },
+          "affectedSystems": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AffectedSystem"
+            }
+          },
+          "affectedIntegrations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AffectedIntegration"
+            }
+          },
+          "priorities": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Priority"
+            }
+          },
+          "recovery": {
+            "$ref": "#/components/schemas/Recovery"
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "ImpactPriorityResponse": {
+        "type": "object",
+        "properties": {
+          "failedSystemId": {
+            "type": "string"
+          },
+          "priorities": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PrioritizedSystemResponse"
+            }
+          }
+        }
+      },
+      "PrioritizedSystemResponse": {
+        "type": "object",
+        "properties": {
+          "systemId": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "impactRing": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "score": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "severity": {
+            "type": "string"
+          },
+          "scoreBreakdown": {
+            "$ref": "#/components/schemas/ScoreBreakdownResponse"
+          }
+        }
+      },
+      "ScoreBreakdownResponse": {
+        "type": "object",
+        "properties": {
+          "criticalityPoints": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "fanOutPoints": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "slaPoints": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "proximityPoints": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "SurveyStatusResponse": {
+        "type": "object",
+        "properties": {
+          "module": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          }
+        }
+      },
+      "WarningResponse": {
+        "type": "object",
+        "properties": {
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "LandscapeHealthMapResponse": {
+        "type": "object",
+        "properties": {
+          "systems": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SystemResponse"
+            }
+          },
+          "integrations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IntegrationResponse"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "operatorApiKey": {
+        "type": "apiKey",
+        "name": "X-Faultline-Api-Key",
+        "in": "header"
+      }
     }
   }
 }

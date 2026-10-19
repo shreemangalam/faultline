@@ -6,10 +6,17 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "qa:dashboard": "node ../scripts/verify-dashboard.cjs",
+    "qa:inspector": "node ../scripts/verify-inspector.cjs",
+    "qa:survey-graph": "node ../scripts/verify-survey-graph.cjs",
+    "qa:security": "node ../scripts/verify-api-security.cjs",
+    "qa:browser": "npm run qa:dashboard && npm run qa:inspector && npm run qa:survey-graph",
+    "contracts:export": "node ../scripts/export-openapi.cjs",
+    "contracts:check": "node ../scripts/export-openapi.cjs --check"
   },
   "dependencies": {
-    "next": "^16.3.4",
+    "next": "^16.3.8",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   },
@@ -17,6 +24,7 @@
     "@types/node": "^22.15.0",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
+    "playwright": "1.62.1",
     "typescript": "^5.8.3"
   }
 }
