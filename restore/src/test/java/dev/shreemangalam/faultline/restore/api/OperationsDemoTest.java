@@ -74,7 +74,7 @@ class OperationsDemoTest {
         jdbc.update("""
             INSERT INTO restore_event (id, idempotency_key, request_fingerprint, correlation_id,
             target_system, payload_reference, priority, state, attempt_count, next_eligible_at, created_at, updated_at)
-            VALUES (RANDOM_UUID(), 'preserved', 'fingerprint', 'preserved', 'PRESERVED',
+            VALUES (gen_random_uuid(), 'preserved', 'fingerprint', 'preserved', 'PRESERVED',
             'demo://preserved', 1, 'ELIGIBLE', 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
             """);
         assertThat(http.postForEntity("/api/v1/scenarios/operations-demo", null, String.class).getStatusCode()).isEqualTo(HttpStatus.CONFLICT);

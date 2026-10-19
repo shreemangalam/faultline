@@ -76,20 +76,23 @@ For the affected subgraph, Survey builds incoming-dependency counts. Nodes with 
 
 If nodes remain after the queue empties, the subgraph contains a cycle. Survey reports the cycle as a warning and does not invent an unsafe automatic order.
 
-## Planned API surface
+## Current API surface
 
 | Endpoint | Purpose |
 |---|---|
-| `POST /api/v1/landscape/systems` | Register or update a system node. |
-| `POST /api/v1/landscape/integrations` | Register an integration edge/iFlow. |
-| `POST /api/v1/landscape/import` | Load validated sample JSON. |
+| `POST /api/v1/landscape/import/validate` | Preview validation issues. |
+| `POST /api/v1/landscape/imports` | Store a validated immutable topology. |
+| `GET /api/v1/landscape/imports/{importId}` | Retrieve the stored topology. |
+| `PUT /api/v1/landscape/imports/{importId}/activate` | Select a stored topology for analysis. |
+| `GET /api/v1/landscape/active` | Inspect the selected imported topology, or 404 when the sample is active. |
 | `POST /api/v1/analysis/impact` | Create an impact report for an incident. |
 | `GET /api/v1/analysis/impact/{reportId}` | Retrieve the persisted report. |
 | `POST /api/v1/analysis/recovery-sequence` | Generate a recovery plan. |
+| `POST /api/v1/analysis/impact-priorities` | Return explainable ranked impact. |
 | `GET /api/v1/landscape/health-map` | Return graph and current health for the UI. |
 | `GET /api/v1/landscape/warnings` | List detected anomalies and cycles. |
 
-The exact schema will be versioned in OpenAPI before the implementation is considered complete.
+The [OpenAPI snapshot](../api/survey-openapi.json) contains the current schema. Per-node CRUD from the early plan is not shipped; immutable imports are the configuration workflow. The health map is a topology view with healthy baseline nodes, not live incident telemetry. `COMPLETE_OUTAGE` is the supported incident type. Classification is computed separately from scoring; the [scoring contract](../technical/survey-impact-priority.md) describes the exact current formula.
 
 ## Frontend experience and API contract
 

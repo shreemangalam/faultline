@@ -1,9 +1,10 @@
 /* Survey graph checks use the active API topology, without creating incident reports. */
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
+const path = require('node:path');
+const { chromium } = require(process.env.PLAYWRIGHT_MODULE || path.join(__dirname, '../dashboard/node_modules/playwright'));
 const base = process.env.BASE_URL || 'http://localhost:3002';
-const output = process.env.QA_OUTPUT || 'private/graph-qa';
+const output = path.resolve(__dirname, '..', process.env.QA_OUTPUT || 'private/graph-qa');
 (async () => {
   fs.mkdirSync(output, { recursive: true });
   const browser = await chromium.launch({ headless: true, ...(process.env.PLAYWRIGHT_EXECUTABLE ? { executablePath: process.env.PLAYWRIGHT_EXECUTABLE } : {}) });

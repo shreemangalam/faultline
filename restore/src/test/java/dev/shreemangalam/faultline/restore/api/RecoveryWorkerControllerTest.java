@@ -234,6 +234,77 @@ class RecoveryWorkerControllerTest {
                 .andExpect(status().isConflict());
     }
 
+    @Test
+    void replacesAnExpiredCircuitProbeAndRejectsTheAbandonedWorker() throws Exception {
+        String eventId = createEvent();
+        openCircuitForProbe();
+        claimProbe("probe-a", eventId);
+        mockMvc.perform(post("/api/v1/worker/claims").contentType(MediaType.APPLICATION_JSON)
+                        .content(claimRequest("probe-b", 10, 60)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(0));
+
+        Timestamp expired = Timestamp.from(Instant.now().minusSeconds(1));
+        jdbcTemplate.update("UPDATE restore_event SET lease_expires_at = ? WHERE id = ?", expired, UUID.fromString(eventId));
+        jdbcTemplate.update("UPDATE restore_circuit_breaker SET probe_lease_expires_at = ? WHERE target_system = 'SALESFORCE'", expired);
+        claimProbe("probe-b", eventId);
+        mockMvc.perform(post("/api/v1/worker/claims/{eventId}/complete", eventId).contentType(MediaType.APPLICATION_JSON)
+                        .content(completeRequest("probe-a"))).andExpect(status().isConflict());
+        mockMvc.perform(post("/api/v1/worker/claims/{eventId}/complete", eventId).contentType(MediaType.APPLICATION_JSON)
+                        .content(completeRequest("probe-b"))).andExpect(status().isOk());
+        mockMvc.perform(get("/api/v1/events/{eventId}", eventId))
+                .andExpect(jsonPath("$.attemptCount").value(2))
+                .andExpect(jsonPath("$.attempts[0].outcome").value("LEASE_EXPIRED"));
+        assertCircuit("CLOSED");
+    }
+
+    @Test
+    void aPermanentProbeRejectionClosesTheCircuitAndAdmitsOtherWork() throws Exception {
+        String rejected = createEvent();
+        openCircuitForProbe();
+        claimProbe("probe-a", rejected);
+        String next = createEvent();
+        mockMvc.perform(post("/api/v1/worker/claims/{eventId}/fail-final", rejected).contentType(MediaType.APPLICATION_JSON)
+                        .content(failRequest("probe-a", "invalid input")))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.state").value("FAILED_FINAL"));
+        assertCircuit("CLOSED");
+        claimProbe("probe-b", next);
+    }
+
+    @Test
+    void aResultFromAnOlderBatchCannotSettleAnotherEventsProbe() throws Exception {
+        String old = createEvent();
+        claimProbe("old-batch", old);
+        String probe = createEvent();
+        openCircuitForProbe();
+        claimProbe("probe-a", probe);
+        mockMvc.perform(post("/api/v1/worker/claims/{eventId}/complete", old).contentType(MediaType.APPLICATION_JSON)
+                        .content(completeRequest("old-batch"))).andExpect(status().isOk());
+        assertCircuit("HALF_OPEN");
+        mockMvc.perform(post("/api/v1/worker/claims/{eventId}/retry", probe).contentType(MediaType.APPLICATION_JSON)
+                        .content(failRequest("probe-a", "target still down"))).andExpect(status().isOk());
+        assertCircuit("OPEN");
+        org.assertj.core.api.Assertions.assertThat(jdbcTemplate.queryForObject(
+                "SELECT open_until FROM restore_circuit_breaker WHERE target_system='SALESFORCE'", Timestamp.class).toInstant())
+                .isAfter(Instant.now().plusSeconds(50));
+    }
+
+    private void openCircuitForProbe() {
+        jdbcTemplate.update("UPDATE restore_circuit_breaker SET state='OPEN', consecutive_failures=3, open_until=? WHERE target_system='SALESFORCE'",
+                Timestamp.from(Instant.now().minusSeconds(1)));
+    }
+
+    private void claimProbe(String workerId, String eventId) throws Exception {
+        mockMvc.perform(post("/api/v1/worker/claims").contentType(MediaType.APPLICATION_JSON)
+                        .content(claimRequest(workerId, 10, 60)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].eventId").value(eventId));
+    }
+
+    private void assertCircuit(String expected) {
+        org.assertj.core.api.Assertions.assertThat(jdbcTemplate.queryForObject(
+                "SELECT state FROM restore_circuit_breaker WHERE target_system='SALESFORCE'", String.class)).isEqualTo(expected);
+    }
+
     private String createEvent() throws Exception {
         return createEvent("order-lease");
     }

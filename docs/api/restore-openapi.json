@@ -1,0 +1,1688 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Faultline Restore API",
+    "description": "Dependency-aware event recovery API. Mutating operations require an operator API key.",
+    "version": "v1"
+  },
+  "paths": {
+    "/api/v1/simulator/targets/{targetSystem}": {
+      "get": {
+        "tags": [
+          "downstream-simulator-controller"
+        ],
+        "operationId": "get",
+        "parameters": [
+          {
+            "name": "targetSystem",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 100,
+              "minLength": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimulatorTargetResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "downstream-simulator-controller"
+        ],
+        "operationId": "configure",
+        "parameters": [
+          {
+            "name": "targetSystem",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 100,
+              "minLength": 0
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfigureSimulatorTargetRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimulatorTargetResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "operatorApiKey": []
+          }
+        ],
+        "x-faultline-role": "operator"
+      }
+    },
+    "/api/v1/worker/run-once": {
+      "post": {
+        "tags": [
+          "recovery-execution-controller"
+        ],
+        "operationId": "execute",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExecuteRecoveryBatchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ExecutedRecoveryEventResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "operatorApiKey": []
+          }
+        ],
+        "x-faultline-role": "operator"
+      }
+    },
+    "/api/v1/worker/claims": {
+      "post": {
+        "tags": [
+          "recovery-worker-controller"
+        ],
+        "operationId": "claim",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClaimRecoveryEventsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ClaimedRecoveryEventResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "operatorApiKey": []
+          }
+        ],
+        "x-faultline-role": "operator"
+      }
+    },
+    "/api/v1/worker/claims/{eventId}/retry": {
+      "post": {
+        "tags": [
+          "recovery-worker-controller"
+        ],
+        "operationId": "retry",
+        "parameters": [
+          {
+            "name": "eventId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RetryRecoveryEventRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetryRecoveryEventResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "operatorApiKey": []
+          }
+        ],
+        "x-faultline-role": "operator"
+      }
+    },
+    "/api/v1/worker/claims/{eventId}/fail-final": {
+      "post": {
+        "tags": [
+          "recovery-worker-controller"
+        ],
+        "operationId": "failFinal",
+        "parameters": [
+          {
+            "name": "eventId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FailRecoveryEventRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FailedRecoveryEventResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "operatorApiKey": []
+          }
+        ],
+        "x-faultline-role": "operator"
+      }
+    },
+    "/api/v1/worker/claims/{eventId}/complete": {
+      "post": {
+        "tags": [
+          "recovery-worker-controller"
+        ],
+        "operationId": "complete",
+        "parameters": [
+          {
+            "name": "eventId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompleteRecoveryEventRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompletedRecoveryEventResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "operatorApiKey": []
+          }
+        ],
+        "x-faultline-role": "operator"
+      }
+    },
+    "/api/v1/simulator/targets/{targetSystem}/deliveries": {
+      "post": {
+        "tags": [
+          "downstream-simulator-controller"
+        ],
+        "operationId": "deliver",
+        "parameters": [
+          {
+            "name": "targetSystem",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 100,
+              "minLength": 0
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 100,
+              "minLength": 0
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SimulatedDeliveryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimulatedDeliveryResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "operatorApiKey": []
+          }
+        ],
+        "x-faultline-role": "operator"
+      }
+    },
+    "/api/v1/scenarios/thundering-herd": {
+      "post": {
+        "tags": [
+          "recovery-scenario-controller"
+        ],
+        "operationId": "loadThunderingHerd",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ThunderingHerdScenarioRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThunderingHerdScenarioResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "operatorApiKey": []
+          }
+        ],
+        "x-faultline-role": "operator"
+      }
+    },
+    "/api/v1/scenarios/terminal-failures": {
+      "post": {
+        "tags": [
+          "recovery-scenario-controller"
+        ],
+        "operationId": "loadTerminalFailures",
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TerminalFailureScenarioResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "operatorApiKey": []
+          }
+        ],
+        "x-faultline-role": "operator"
+      }
+    },
+    "/api/v1/scenarios/priority-deadline": {
+      "post": {
+        "tags": [
+          "recovery-scenario-controller"
+        ],
+        "operationId": "loadPriorityDeadline",
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PriorityDeadlineScenarioResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "operatorApiKey": []
+          }
+        ],
+        "x-faultline-role": "operator"
+      }
+    },
+    "/api/v1/scenarios/operations-demo": {
+      "get": {
+        "tags": [
+          "operations-demo-controller"
+        ],
+        "operationId": "status",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Status"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "operations-demo-controller"
+        ],
+        "operationId": "load",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Status"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "operatorApiKey": []
+          }
+        ],
+        "x-faultline-role": "operator"
+      }
+    },
+    "/api/v1/scenarios/operations-demo/recover": {
+      "post": {
+        "tags": [
+          "operations-demo-controller"
+        ],
+        "operationId": "recover",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Status"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "operatorApiKey": []
+          }
+        ],
+        "x-faultline-role": "operator"
+      }
+    },
+    "/api/v1/scenarios/dependency-cascade": {
+      "post": {
+        "tags": [
+          "recovery-scenario-controller"
+        ],
+        "operationId": "loadDependencyCascade",
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DependencyCascadeScenarioResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "operatorApiKey": []
+          }
+        ],
+        "x-faultline-role": "operator"
+      }
+    },
+    "/api/v1/events": {
+      "get": {
+        "tags": [
+          "recovery-event-controller"
+        ],
+        "operationId": "list",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "RECEIVED",
+                "ELIGIBLE",
+                "BLOCKED",
+                "IN_PROGRESS",
+                "RETRY_SCHEDULED",
+                "COMPLETED",
+                "EXHAUSTED",
+                "FAILED_FINAL",
+                "FAILED_DEPENDENCY"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RecoveryEventResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "recovery-event-controller"
+        ],
+        "operationId": "submit",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRecoveryEventRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecoveryEventResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "operatorApiKey": []
+          }
+        ],
+        "x-faultline-role": "operator"
+      }
+    },
+    "/api/v1/stream": {
+      "get": {
+        "tags": [
+          "recovery-stream-controller"
+        ],
+        "operationId": "subscribe",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "$ref": "#/components/schemas/SseEmitter"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/statistics": {
+      "get": {
+        "tags": [
+          "recovery-statistics-controller"
+        ],
+        "operationId": "get_1",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecoveryStatisticsResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/restore/status": {
+      "get": {
+        "tags": [
+          "restore-status-controller"
+        ],
+        "operationId": "status_1",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RestoreStatusResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/events/{eventId}": {
+      "get": {
+        "tags": [
+          "recovery-event-controller"
+        ],
+        "operationId": "get_2",
+        "parameters": [
+          {
+            "name": "eventId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecoveryEventResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/circuit-breakers": {
+      "get": {
+        "tags": [
+          "circuit-breaker-controller"
+        ],
+        "operationId": "list_1",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CircuitBreakerResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ConfigureSimulatorTargetRequest": {
+        "type": "object",
+        "properties": {
+          "behavior": {
+            "type": "string",
+            "enum": [
+              "SUCCESS",
+              "TEMPORARY_UNAVAILABLE",
+              "RATE_LIMITED",
+              "DELAYED_SUCCESS",
+              "VALIDATION_FAILURE"
+            ]
+          },
+          "delayMillis": {
+            "type": "integer",
+            "format": "int64",
+            "maximum": 10000,
+            "minimum": 0
+          },
+          "resetHistory": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "behavior"
+        ]
+      },
+      "SimulatorTargetResponse": {
+        "type": "object",
+        "properties": {
+          "targetSystem": {
+            "type": "string"
+          },
+          "behavior": {
+            "type": "string",
+            "enum": [
+              "SUCCESS",
+              "TEMPORARY_UNAVAILABLE",
+              "RATE_LIMITED",
+              "DELAYED_SUCCESS",
+              "VALIDATION_FAILURE"
+            ]
+          },
+          "delayMillis": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "requestCount": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "acceptedCount": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "ExecuteRecoveryBatchRequest": {
+        "type": "object",
+        "properties": {
+          "workerId": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 0
+          },
+          "maxEvents": {
+            "type": "integer",
+            "format": "int32",
+            "maximum": 10,
+            "minimum": 1
+          },
+          "leaseSeconds": {
+            "type": "integer",
+            "format": "int32",
+            "maximum": 300,
+            "minimum": 30
+          }
+        },
+        "required": [
+          "workerId"
+        ]
+      },
+      "ExecutedRecoveryEventResponse": {
+        "type": "object",
+        "properties": {
+          "eventId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "RECEIVED",
+              "ELIGIBLE",
+              "BLOCKED",
+              "IN_PROGRESS",
+              "RETRY_SCHEDULED",
+              "COMPLETED",
+              "EXHAUSTED",
+              "FAILED_FINAL",
+              "FAILED_DEPENDENCY"
+            ]
+          },
+          "classification": {
+            "type": "string",
+            "enum": [
+              "SUCCESS",
+              "TRANSIENT_FAILURE",
+              "PERMANENT_FAILURE"
+            ]
+          },
+          "httpStatus": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "durationMillis": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "releasedEventIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        }
+      },
+      "ClaimRecoveryEventsRequest": {
+        "type": "object",
+        "properties": {
+          "workerId": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 0
+          },
+          "maxEvents": {
+            "type": "integer",
+            "format": "int32",
+            "maximum": 50,
+            "minimum": 1
+          },
+          "leaseSeconds": {
+            "type": "integer",
+            "format": "int32",
+            "maximum": 300,
+            "minimum": 1
+          }
+        },
+        "required": [
+          "workerId"
+        ]
+      },
+      "ClaimedRecoveryEventResponse": {
+        "type": "object",
+        "properties": {
+          "eventId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "correlationId": {
+            "type": "string"
+          },
+          "targetSystem": {
+            "type": "string"
+          },
+          "payloadReference": {
+            "type": "string"
+          },
+          "priority": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "attemptCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "leaseOwner": {
+            "type": "string"
+          },
+          "leaseExpiresAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "RetryRecoveryEventRequest": {
+        "type": "object",
+        "properties": {
+          "workerId": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 0
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 0
+          }
+        },
+        "required": [
+          "reason",
+          "workerId"
+        ]
+      },
+      "RetryRecoveryEventResponse": {
+        "type": "object",
+        "properties": {
+          "eventId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "RECEIVED",
+              "ELIGIBLE",
+              "BLOCKED",
+              "IN_PROGRESS",
+              "RETRY_SCHEDULED",
+              "COMPLETED",
+              "EXHAUSTED",
+              "FAILED_FINAL",
+              "FAILED_DEPENDENCY"
+            ]
+          },
+          "nextEligibleAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "FailRecoveryEventRequest": {
+        "type": "object",
+        "properties": {
+          "workerId": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 0
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 0
+          }
+        },
+        "required": [
+          "reason",
+          "workerId"
+        ]
+      },
+      "FailedRecoveryEventResponse": {
+        "type": "object",
+        "properties": {
+          "eventId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "RECEIVED",
+              "ELIGIBLE",
+              "BLOCKED",
+              "IN_PROGRESS",
+              "RETRY_SCHEDULED",
+              "COMPLETED",
+              "EXHAUSTED",
+              "FAILED_FINAL",
+              "FAILED_DEPENDENCY"
+            ]
+          }
+        }
+      },
+      "CompleteRecoveryEventRequest": {
+        "type": "object",
+        "properties": {
+          "workerId": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 0
+          }
+        },
+        "required": [
+          "workerId"
+        ]
+      },
+      "CompletedRecoveryEventResponse": {
+        "type": "object",
+        "properties": {
+          "eventId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "releasedEventIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        }
+      },
+      "SimulatedDeliveryRequest": {
+        "type": "object",
+        "properties": {
+          "eventId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "correlationId": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 0
+          },
+          "payloadReference": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 0
+          }
+        },
+        "required": [
+          "correlationId",
+          "eventId",
+          "payloadReference"
+        ]
+      },
+      "SimulatedDeliveryResponse": {
+        "type": "object",
+        "properties": {
+          "accepted": {
+            "type": "boolean"
+          },
+          "duplicate": {
+            "type": "boolean"
+          },
+          "receiptId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "outcome": {
+            "type": "string"
+          }
+        }
+      },
+      "ThunderingHerdScenarioRequest": {
+        "type": "object",
+        "properties": {
+          "eventCount": {
+            "type": "integer",
+            "format": "int32",
+            "maximum": 50000,
+            "minimum": 1
+          }
+        }
+      },
+      "ThunderingHerdScenarioResponse": {
+        "type": "object",
+        "properties": {
+          "scenarioId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "scenario": {
+            "type": "string"
+          },
+          "correlationId": {
+            "type": "string"
+          },
+          "targetSystem": {
+            "type": "string"
+          },
+          "eventCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "RECEIVED",
+              "ELIGIBLE",
+              "BLOCKED",
+              "IN_PROGRESS",
+              "RETRY_SCHEDULED",
+              "COMPLETED",
+              "EXHAUSTED",
+              "FAILED_FINAL",
+              "FAILED_DEPENDENCY"
+            ]
+          },
+          "downstreamBehavior": {
+            "type": "string",
+            "enum": [
+              "SUCCESS",
+              "TEMPORARY_UNAVAILABLE",
+              "RATE_LIMITED",
+              "DELAYED_SUCCESS",
+              "VALIDATION_FAILURE"
+            ]
+          },
+          "loadedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ScenarioRecoveryEventResponse": {
+        "type": "object",
+        "properties": {
+          "step": {
+            "type": "string"
+          },
+          "eventId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "targetSystem": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "RECEIVED",
+              "ELIGIBLE",
+              "BLOCKED",
+              "IN_PROGRESS",
+              "RETRY_SCHEDULED",
+              "COMPLETED",
+              "EXHAUSTED",
+              "FAILED_FINAL",
+              "FAILED_DEPENDENCY"
+            ]
+          },
+          "prerequisiteEventIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        }
+      },
+      "TerminalFailurePathResponse": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "targetSystem": {
+            "type": "string"
+          },
+          "downstreamBehavior": {
+            "type": "string",
+            "enum": [
+              "SUCCESS",
+              "TEMPORARY_UNAVAILABLE",
+              "RATE_LIMITED",
+              "DELAYED_SUCCESS",
+              "VALIDATION_FAILURE"
+            ]
+          },
+          "expectedTerminalState": {
+            "type": "string",
+            "enum": [
+              "RECEIVED",
+              "ELIGIBLE",
+              "BLOCKED",
+              "IN_PROGRESS",
+              "RETRY_SCHEDULED",
+              "COMPLETED",
+              "EXHAUSTED",
+              "FAILED_FINAL",
+              "FAILED_DEPENDENCY"
+            ]
+          },
+          "expectedAttempts": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "TerminalFailureScenarioResponse": {
+        "type": "object",
+        "properties": {
+          "scenarioId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "scenario": {
+            "type": "string"
+          },
+          "correlationId": {
+            "type": "string"
+          },
+          "eventCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "failurePaths": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TerminalFailurePathResponse"
+            }
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ScenarioRecoveryEventResponse"
+            }
+          },
+          "loadedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "PriorityDeadlineScenarioResponse": {
+        "type": "object",
+        "properties": {
+          "scenarioId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "scenario": {
+            "type": "string"
+          },
+          "correlationId": {
+            "type": "string"
+          },
+          "eventCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "expectedAdmissionOrder": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RankedScenarioRecoveryEventResponse"
+            }
+          },
+          "loadedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "RankedScenarioRecoveryEventResponse": {
+        "type": "object",
+        "properties": {
+          "step": {
+            "type": "string"
+          },
+          "eventId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "targetSystem": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "RECEIVED",
+              "ELIGIBLE",
+              "BLOCKED",
+              "IN_PROGRESS",
+              "RETRY_SCHEDULED",
+              "COMPLETED",
+              "EXHAUSTED",
+              "FAILED_FINAL",
+              "FAILED_DEPENDENCY"
+            ]
+          },
+          "priority": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "deadlineAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "prerequisiteEventIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        }
+      },
+      "Status": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "eventCount": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "DependencyCascadeScenarioResponse": {
+        "type": "object",
+        "properties": {
+          "scenarioId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "scenario": {
+            "type": "string"
+          },
+          "correlationId": {
+            "type": "string"
+          },
+          "eventCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ScenarioRecoveryEventResponse"
+            }
+          }
+        }
+      },
+      "CreateRecoveryEventRequest": {
+        "type": "object",
+        "properties": {
+          "idempotencyKey": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 0
+          },
+          "correlationId": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 0
+          },
+          "targetSystem": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 0
+          },
+          "payloadReference": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 0
+          },
+          "priority": {
+            "type": "integer",
+            "format": "int32",
+            "maximum": 5,
+            "minimum": 1
+          },
+          "deadlineAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "prerequisiteEventIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "maxItems": 20,
+            "minItems": 0
+          }
+        },
+        "required": [
+          "correlationId",
+          "idempotencyKey",
+          "payloadReference",
+          "targetSystem"
+        ]
+      },
+      "RecoveryAttemptResponse": {
+        "type": "object",
+        "properties": {
+          "attemptId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "attemptNumber": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "workerId": {
+            "type": "string"
+          },
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "IN_PROGRESS",
+              "SUCCEEDED",
+              "TRANSIENT_FAILURE",
+              "LEASE_EXPIRED",
+              "EXHAUSTED",
+              "PERMANENT_FAILURE"
+            ]
+          },
+          "failureReason": {
+            "type": "string"
+          },
+          "httpStatus": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "durationMillis": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "startedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "finishedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "RecoveryEventAuditResponse": {
+        "type": "object",
+        "properties": {
+          "auditId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "toState": {
+            "type": "string",
+            "enum": [
+              "RECEIVED",
+              "ELIGIBLE",
+              "BLOCKED",
+              "IN_PROGRESS",
+              "RETRY_SCHEDULED",
+              "COMPLETED",
+              "EXHAUSTED",
+              "FAILED_FINAL",
+              "FAILED_DEPENDENCY"
+            ]
+          },
+          "reason": {
+            "type": "string"
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "RecoveryEventResponse": {
+        "type": "object",
+        "properties": {
+          "eventId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "idempotencyKey": {
+            "type": "string"
+          },
+          "correlationId": {
+            "type": "string"
+          },
+          "targetSystem": {
+            "type": "string"
+          },
+          "payloadReference": {
+            "type": "string"
+          },
+          "priority": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "deadlineAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "RECEIVED",
+              "ELIGIBLE",
+              "BLOCKED",
+              "IN_PROGRESS",
+              "RETRY_SCHEDULED",
+              "COMPLETED",
+              "EXHAUSTED",
+              "FAILED_FINAL",
+              "FAILED_DEPENDENCY"
+            ]
+          },
+          "attemptCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "nextEligibleAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "leaseOwner": {
+            "type": "string"
+          },
+          "leaseExpiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "prerequisiteEventIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "audits": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RecoveryEventAuditResponse"
+            }
+          },
+          "attempts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RecoveryAttemptResponse"
+            }
+          }
+        }
+      },
+      "SseEmitter": {
+        "type": "object",
+        "properties": {
+          "timeout": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64"
+          }
+        }
+      },
+      "RecoveryStatisticsResponse": {
+        "type": "object",
+        "properties": {
+          "generatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "totalEvents": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "pendingEventCount": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "terminalFailureCount": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "eventCounts": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          "totalAttempts": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "attemptCounts": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          "p95SuccessfulRecoveryLatencyMillis": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "RestoreStatusResponse": {
+        "type": "object",
+        "properties": {
+          "module": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          }
+        }
+      },
+      "CircuitBreakerResponse": {
+        "type": "object",
+        "properties": {
+          "targetSystem": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "CLOSED",
+              "OPEN",
+              "HALF_OPEN"
+            ]
+          },
+          "consecutiveFailures": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "openUntil": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "operatorApiKey": {
+        "type": "apiKey",
+        "name": "X-Faultline-Api-Key",
+        "in": "header"
+      }
+    }
+  }
+}

@@ -53,6 +53,10 @@ class ImpactAnalysisControllerTest {
         mockMvc.perform(post("/api/v1/analysis/impact")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"systemId\":\"MISSING_SYSTEM\",\"degradationType\":\"COMPLETE_OUTAGE\"}"))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isNotFound())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content()
+                        .contentTypeCompatibleWith(org.springframework.http.MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.title").value("Unknown system"))
+                .andExpect(jsonPath("$.detail").value("unknown system ID: MISSING_SYSTEM"));
     }
 }

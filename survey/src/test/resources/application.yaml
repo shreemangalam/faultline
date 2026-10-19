@@ -1,12 +1,18 @@
 spring:
+  autoconfigure:
+    exclude: org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
   datasource:
-    url: jdbc:h2:mem:faultline-survey;MODE=PostgreSQL;DB_CLOSE_DELAY=-1
-    username: sa
-    password:
-    driver-class-name: org.h2.Driver
+    url: jdbc:tc:postgresql:16-alpine:///faultline-survey
+    username: faultline
+    password: faultline
+    driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
   jpa:
     open-in-view: false
     hibernate:
       ddl-auto: validate
   flyway:
     enabled: true
+faultline:
+  security:
+    enabled: false
+    api-key: test-operator-api-key

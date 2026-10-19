@@ -3,6 +3,7 @@ package dev.shreemangalam.faultline.restore.api;
 import dev.shreemangalam.faultline.restore.simulator.DownstreamSimulatorService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
@@ -19,6 +20,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(DownstreamSimulatorController.class)
 @Import(DownstreamSimulatorService.class)
+@AutoConfigureMockMvc(addFilters = false)
 class DownstreamSimulatorControllerTest {
     @Autowired
     private MockMvc mockMvc;

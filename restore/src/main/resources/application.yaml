@@ -1,6 +1,8 @@
 spring:
   application:
     name: faultline-restore
+  autoconfigure:
+    exclude: org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
   datasource:
     url: ${RESTORE_DB_URL:jdbc:postgresql://localhost:5432/faultline}
     username: ${POSTGRES_USER:faultline}
@@ -18,9 +20,17 @@ spring:
     table: restore_flyway_schema_history
     baseline-on-migrate: true
     baseline-version: 0
+  mvc:
+    problemdetails:
+      enabled: true
 
 server:
   port: ${PORT:8082}
+
+faultline:
+  security:
+    enabled: ${FAULTLINE_SECURITY_ENABLED:true}
+    api-key: ${FAULTLINE_API_KEY:local-development-only}
 
 restore:
   operations-demo:
@@ -40,6 +50,7 @@ restore:
     notification-buffer-capacity: ${RESTORE_STREAM_NOTIFICATION_BUFFER_CAPACITY:256}
   downstream:
     base-url: ${RESTORE_DOWNSTREAM_BASE_URL:}
+    api-key: ${RESTORE_DOWNSTREAM_API_KEY:}
     connect-timeout: ${RESTORE_DOWNSTREAM_CONNECT_TIMEOUT:1s}
     read-timeout: ${RESTORE_DOWNSTREAM_READ_TIMEOUT:2s}
 

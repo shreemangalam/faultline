@@ -9,9 +9,15 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: verify-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  test:
+  backend:
+    name: Backend / PostgreSQL
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - name: Set up Java 21
@@ -20,5 +26,90 @@ jobs:
           distribution: temurin
           java-version: "21"
           cache: maven
-      - name: Run backend tests
+      - name: Run backend tests against PostgreSQL containers
         run: mvn --batch-mode --no-transfer-progress verify
+
+  dashboard:
+    name: Dashboard / production build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: dashboard/package-lock.json
+      - name: Install exact dependencies
+        run: npm ci --prefix dashboard
+      - name: Type-check
+        run: npm run typecheck --prefix dashboard
+      - name: Build production dashboard
+        run: npm run build --prefix dashboard
+      - name: Audit production dependencies
+        run: npm audit --prefix dashboard --omit=dev
+      - name: Validate Compose models
+        run: |
+          docker compose -f infra/compose.yaml config --quiet
+          docker compose -f infra/operations-demo.compose.yaml config --quiet
+
+  system:
+    name: API contracts / browser system test
+    needs: [backend, dashboard]
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      BASE_URL: http://localhost:3002
+      SURVEY_API_URL: http://localhost:18081
+      RESTORE_API_URL: http://localhost:18082
+      SURVEY_OPENAPI_URL: http://localhost:18081/v3/api-docs
+      RESTORE_OPENAPI_URL: http://localhost:18082/v3/api-docs
+      FAULTLINE_API_KEY: ci-operator-api-key
+      QA_OUTPUT: private/ci-dashboard-qa
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: dashboard/package-lock.json
+      - name: Install exact dependencies
+        run: npm ci --prefix dashboard
+      - name: Install Chromium
+        run: npx --prefix dashboard playwright install --with-deps chromium
+      - name: Start isolated real stack
+        run: docker compose -p faultline-ci -f infra/operations-demo.compose.yaml up --build --detach
+      - name: Wait for dashboard and services
+        shell: bash
+        run: |
+          for attempt in {1..90}; do
+            if curl --fail --silent http://localhost:3002/api/survey/v1/survey/status >/dev/null &&
+               curl --fail --silent http://localhost:3002/api/restore/v1/restore/status >/dev/null; then
+              exit 0
+            fi
+            sleep 2
+          done
+          docker compose -p faultline-ci -f infra/operations-demo.compose.yaml logs
+          exit 1
+      - name: Load real operations scenario
+        run: curl --fail --silent --show-error --request POST http://localhost:3002/api/restore/v1/scenarios/operations-demo >/dev/null
+      - name: Verify API boundary
+        run: npm run qa:security --prefix dashboard
+      - name: Verify committed OpenAPI contracts
+        run: npm run contracts:check --prefix dashboard
+      - name: Run browser system tests
+        run: npm run qa:browser --prefix dashboard
+      - name: Upload browser evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dashboard-system-evidence
+          path: private/ci-dashboard-qa
+          if-no-files-found: warn
+          retention-days: 14
+      - name: Show service logs
+        if: failure()
+        run: docker compose -p faultline-ci -f infra/operations-demo.compose.yaml logs
+      - name: Stop isolated stack
+        if: always()
+        run: docker compose -p faultline-ci -f infra/operations-demo.compose.yaml down

@@ -1,6 +1,6 @@
 # Faultline — Integration Resilience Control Plane
 
-> Working name: **Faultline**. The name can be changed before the repository is created.
+> Product design baseline. See the [learning path](../learning-path.md) and [release verification](../worklog/2026-10-18-release-readiness.md) for current behavior and evidence. The original phase estimates below describe the initial build, not remaining work.
 
 ## 1. The product in one sentence
 
@@ -22,16 +22,14 @@ Most simple retry demos answer neither question. Faultline answers both through 
 After `docker compose up`, the project will run entirely on a developer machine:
 
 ```text
-Next.js browser dashboard                 Swagger / OpenAPI
-           |                                      |
-           +-------- REST + Server-Sent Events ---+
-           |                     |
-           +--> Survey API --------+----> PostgreSQL
-           |       graph analysis  |
-           |                       +----> Restore API
-           |                             durable recovery worker
-           |                                      |
-           +--------------------------------------> local downstream simulator
+Next.js browser dashboard -- same-origin server proxy
+                                    |
+                         REST + Server-Sent Events
+                         /                      \
+                 Survey API                  Restore API
+                  graph analysis             durable recovery
+                         \                      /      |
+                          PostgreSQL tables            +--> HTTP simulator
 ```
 
 The dashboard is a real **Next.js + TypeScript** application, not a static mockup. It has four focused views:
@@ -43,7 +41,7 @@ The dashboard is a real **Next.js + TypeScript** application, not a static mocku
 
 The topology board is purposeful: its systems and directed paths are the exact data structures returned by Survey, so a viewer can select a failing node and immediately understand why the impact report changes. A structured SVG layout is used because the sample estate is compact, cyclic, and benefits more from stable operational lanes than force simulation; ordinary cards, tables, filters, and status displays remain conventional React components.
 
-The primary deliverables are a reproducible local demo and a live demo on a genuinely free hosting path. The provider will be selected and re-verified near release because free-tier terms change; the local Compose workflow remains the no-cost fallback. The public repository will include a short screen recording/GIF, representative screenshots, API examples, seeded data, automated test results, and architecture documents so a reviewer can assess it without running it.
+The version-one deliverable is a reproducible local demo with evidence and architecture documents. Hosted demonstration remains optional and requires an explicit access model plus a current hosting-terms check. The dashboard has no user login and must not be treated as a secure public operator console merely because its backend uses API keys.
 
 ## 4. Module boundary
 
@@ -52,7 +50,7 @@ The primary deliverables are a reproducible local demo and a live demo on a genu
 | **Survey** | Maintains an integration-landscape graph and produces failure-impact and recovery-order reports. | Send or retry business messages. |
 | **Restore** | Stores failed events durably and schedules safe retry attempts based on dependencies, priority, backoff, and circuit health. | Infer the complete enterprise landscape. |
 
-Survey can supply an operator with the recovery context; Restore carries out message-level recovery. They communicate through explicit API contracts and a shared, small domain-model library. Either module can also be demonstrated alone.
+Survey supplies the operator with recovery context; Restore carries out message-level recovery. The dashboard consumes their separate API contracts, and a small shared library contains value objects. There is no direct report-to-event translation or service-to-service recovery trigger. Either module can also be demonstrated alone.
 
 ## 5. What a reviewer will be able to do
 
@@ -122,7 +120,7 @@ No paid cloud product is needed to build, test, or demonstrate Faultline.
 | Need | Free approach | Cost guardrail |
 |---|---|---|
 | Source control and public portfolio | GitHub public repository under `shreemangalam` | Do not enable paid add-ons. |
-| Local runtime | Java, Gradle, PostgreSQL container, Docker Compose | Everything runs locally. Docker Personal is currently listed at $0 for individual developers. |
+| Local runtime | Java, Maven, PostgreSQL container, Docker Compose | Everything runs locally; check tool licence eligibility for your use. |
 | CI | GitHub Actions for a public repository | Keep workflow lean; do not add paid third-party CI. |
 | Monitoring demonstration | Spring Boot Actuator plus local Prometheus/Grafana containers, if used | No hosted observability service. |
 | API exploration | Swagger UI bundled into the application | No API-management subscription. |

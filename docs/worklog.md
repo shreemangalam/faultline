@@ -2,6 +2,14 @@
 
 This is a concise, versioned record of shipped engineering decisions. It is intended to help a maintainer or coding agent understand what changed, why it changed, and how it was verified.
 
+## 2026-10-18 — Local release readiness
+
+- Repaired authenticated HTTP delivery, circuit-probe crash/permanent-result handling, and a Restore-first shared-database startup race.
+- Completed runtime-generated API snapshots, patched compatible dashboard dependencies, and reconciled setup, security, learning, and case-study documents.
+- Verified 81 backend tests, dashboard type checking/production build, a zero-vulnerability production npm audit, Compose models, API/security boundaries, and browser regressions across both themes/four sizes.
+- Passed a 100-event authenticated smoke benchmark with exact accounting and recorded a real 39-message operations recovery with second-tab SSE refresh. Preserved existing demo data.
+- See [verification, recording, screenshots and remaining release decisions](worklog/2026-10-18-release-readiness.md).
+
 ## 2026-08-31 — Survey seeded impact analysis
 
 - Shipped a fictional landscape loaded from `survey/src/main/resources/landscape.json` and `POST /api/v1/analysis/impact`.

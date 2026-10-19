@@ -5,8 +5,10 @@ The opt-in operations scenario creates 39 fictional messages through normal inta
 Start the isolated stack:
 
 ```powershell
-docker compose -p faultline-operations -f infra/operations-demo.compose.yaml up -d --build
-Invoke-RestMethod -Method Post http://localhost:18082/api/v1/scenarios/operations-demo
+docker compose --env-file .env -p faultline-operations -f infra/operations-demo.compose.yaml up -d --build
+# Use the same key chosen in .env, not a literal placeholder.
+$operatorHeaders = @{ 'X-Faultline-Api-Key' = 'your-selected-local-key' }
+Invoke-RestMethod -Method Post -Headers $operatorHeaders http://localhost:18082/api/v1/scenarios/operations-demo
 ```
 
 Open http://localhost:3002. The development dashboard remains on port 3001 when configured there. This stack uses its own named volume and never mounts the preserved development database. Both workers remain disabled. Loading is explicitly opt-in and returns 409 for any nonempty database, including a repeated or interrupted load. It never deletes or overwrites existing events. To repeat from scratch, use a new Compose project name after stopping the old project's containers without deleting volumes.
@@ -14,7 +16,7 @@ Open http://localhost:3002. The development dashboard remains on port 3001 when 
 Recover the simulated Salesforce endpoint, then run manual bounded batches after circuit cooldown:
 
 ```powershell
-Invoke-RestMethod -Method Post http://localhost:18082/api/v1/scenarios/operations-demo/recover
+Invoke-RestMethod -Method Post -Headers $operatorHeaders http://localhost:18082/api/v1/scenarios/operations-demo/recover
 ```
 
 This changes simulator behavior only. Circuit admission, the single half-open probe and dependency release remain production policies. Simulator behavior is process-local; after a service restart its default is success, while PostgreSQL queue/circuit evidence persists. The scenario loader is intended for a single local demo instance without concurrent manual execution during loading.

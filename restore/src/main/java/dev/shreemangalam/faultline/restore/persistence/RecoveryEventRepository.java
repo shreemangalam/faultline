@@ -40,7 +40,7 @@ public interface RecoveryEventRepository extends JpaRepository<RecoveryEventEnti
               AND NOT EXISTS (
                   SELECT 1 FROM restore_circuit_breaker circuit
                   WHERE circuit.target_system = event.target_system
-                    AND (circuit.state = 'HALF_OPEN'
+                    AND ((circuit.state = 'HALF_OPEN' AND circuit.probe_lease_expires_at > :now)
                          OR (circuit.state = 'OPEN' AND circuit.open_until > :now))
               )
             ORDER BY event.priority ASC,

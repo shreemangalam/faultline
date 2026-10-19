@@ -21,6 +21,8 @@ $baseUrl = "http://localhost:$Port"
 $env:RESTORE_BENCHMARK_PORT = $Port
 $httpClient = [System.Net.Http.HttpClient]::new()
 $httpClient.Timeout = [TimeSpan]::FromMinutes(5)
+$benchmarkApiKey = if ([string]::IsNullOrWhiteSpace($env:FAULTLINE_API_KEY)) { 'local-development-only' } else { $env:FAULTLINE_API_KEY }
+$httpClient.DefaultRequestHeaders.Add('X-Faultline-Api-Key', $benchmarkApiKey)
 
 function Invoke-JsonRequest {
     param(

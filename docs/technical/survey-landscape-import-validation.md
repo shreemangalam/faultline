@@ -4,4 +4,4 @@
 
 The validator checks system and integration identifier formats, duplicate IDs, blank labels/protocols, criticality range, and integration source/target relationships. It is deliberately framework-independent, so the same rules can guard a future persisted import workflow.
 
-This endpoint is a validation preview, not the planned state-changing import. Saving a validated landscape becomes safe only after topology and operational state have a durable owner.
+This endpoint is a validation preview. `POST /api/v1/landscape/imports` separately saves a validated immutable snapshot, and `PUT /api/v1/landscape/imports/{importId}/activate` selects it for subsequent analysis. See [persistence](survey-landscape-persistence.md) and [activation](survey-active-landscape.md).

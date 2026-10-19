@@ -14,12 +14,11 @@ Each event has an immutable identity and correlation ID, a target system, payloa
 
 ```text
 RECEIVED -> ELIGIBLE -> IN_PROGRESS -> COMPLETED
-                 |           |
-                 |           +-> RETRY_SCHEDULED -> ELIGIBLE
-                 |
-                 +-> BLOCKED (waiting for prerequisites)
+        \-> BLOCKED -> ELIGIBLE        |
+                     RETRY_SCHEDULED <-+ (transient failure below limit)
+                     RETRY_SCHEDULED -> IN_PROGRESS (due and admitted)
 
-RETRY_SCHEDULED -> EXHAUSTED          (attempt limit or deadline exceeded)
+IN_PROGRESS     -> EXHAUSTED          (third transient-failure attempt)
 IN_PROGRESS     -> FAILED_FINAL       (non-retriable failure)
 BLOCKED         -> FAILED_DEPENDENCY  (a prerequisite cannot complete)
 ```
@@ -60,6 +59,8 @@ CLOSED --failure threshold--> OPEN --cool-down elapsed--> HALF_OPEN
 - **Closed:** attempts are allowed; consecutive qualifying failures are counted.
 - **Open:** ordinary attempts are deferred; the target is given time to recover.
 - **Half-open:** exactly one controlled probe is allowed. Success closes the circuit; failure reopens it with a longer cool-down.
+
+Probe identity and lease expiry are persisted. An abandoned probe can be replaced after expiry; a permanent rejection leaves its message terminal but closes the target circuit. Only the probe's own result can settle a half-open circuit. See the [probe lifecycle contract](../technical/restore-circuit-probes.md). Deadlines influence claim ranking; they do not currently expire events.
 
 This prevents a recovery system from making the outage worse.
 
@@ -106,7 +107,7 @@ The isolated benchmark harness has verified 50,000 events with exact attempt and
 
 The dashboard displays event-status counts, attempt history, circuit state, queue depth, success/failure state, and an event timeline. Data comes from the application’s local database and metrics endpoint, not fabricated screenshots. The statistics contract zero-fills every event and attempt state, defines pending depth as all non-terminal events, and reports nearest-rank p95 receipt-to-success latency.
 
-## Planned API surface
+## Current API surface
 
 | Endpoint | Purpose |
 |---|---|
@@ -122,7 +123,8 @@ The dashboard displays event-status counts, attempt history, circuit state, queu
 | `GET /api/v1/circuit-breakers` | Inspect all target-health states. |
 | `GET /api/v1/statistics` | Return operational aggregates for the dashboard. |
 | `GET /api/v1/stream` | Stream committed recovery-state notifications over SSE. |
-| `POST /api/v1/admin/events/{eventId}/retry` | Explicit, authenticated operator retry action. |
+
+An authenticated operator redrive for terminal events is deferred. The worker claim retry endpoint records transient failure of an owned, in-progress attempt; it does not redrive terminal messages. [Runtime-generated contracts](../technical/api-security.md) describe the complete shipped worker and simulator API.
 
 ## Frontend experience and live updates
 
