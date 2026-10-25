@@ -5,6 +5,7 @@
 **/target
 private
 tmp
+outputs
 .env
 .env.*
 !.env.example

@@ -17,28 +17,21 @@ It contains two complementary backend modules and one operator dashboard. The op
 
 ## Status
 
-Survey is a complete, containerised impact-analysis module. Restore now has durable event intake, dependency-aware release and terminal-failure propagation, worker leases, bounded retries with jittered exponential backoff, persisted target circuits, queryable attempt history and aggregate statistics, a controllable downstream simulator, timeout-bound HTTP execution, opt-in automatic batch scheduling, repeatable scenarios, and an assertion-driven 50,000-event recovery benchmark. Restore now also emits post-commit SSE live-state notifications, and the dashboard exposes its queue, statistics, circuits, event evidence, and scenario controls; the polished Survey incident workspace, Restore operations console and five-minute operator guide are included in both light and dark themes. The public design baseline is available in [`docs/planning`](docs/planning).
+Survey provides graph-based impact analysis, immutable landscape imports, and persisted incident reports. Restore provides durable event intake, dependency-aware recovery, worker leases, bounded retries with jitter, persisted target circuits, attempt/audit evidence, a controllable HTTP simulator, opt-in scheduling, and live updates. The dashboard includes Survey, Restore, and an operator guide in light and dark themes. See the [architecture](docs/architecture.md) for component boundaries and the recovery lifecycle.
 
 No real SAP, CPI, Salesforce, customer data, or credentials are used. All demo systems and payloads are fictional and run locally.
 
-## Public design documents
+## Documentation
 
-- [Suite overview and delivery plan](docs/planning/suite-overview.md)
-- [Survey module design](docs/planning/survey-module.md)
-- [Restore module design](docs/planning/restore-module.md)
+- [Documentation index](docs/README.md)
+- [Architecture](docs/architecture.md)
+- [Operations and verification](docs/operations.md)
 - [Restore 50,000-event benchmark](docs/technical/restore-recovery-benchmark.md)
 - [Restore delivery and ordering contract](docs/technical/restore-delivery-ordering.md)
 - [Restore terminal-failure contract](docs/technical/restore-terminal-failures.md)
 - [Restore live-update contract](docs/technical/restore-live-updates.md)
 - [Restore circuit probes and crash recovery](docs/technical/restore-circuit-probes.md)
 - [API security and downstream credentials](docs/technical/api-security.md)
-- [Learning path through the existing documents](docs/learning-path.md)
-- [Survey case study](docs/case-studies/survey.md) and [Restore case study](docs/case-studies/restore.md)
-- [Release verification and current evidence](docs/worklog/2026-10-18-release-readiness.md)
-
-## Local development policy
-
-The repository will contain production-style source, tests, architecture/design material, sample data, and public demo evidence. Personal interview preparation, detailed learning notes, and scratch material live in the Git-ignored `private/` directory so they are not published accidentally.
 
 ## Implemented stack
 
@@ -58,7 +51,7 @@ Run the isolated recovery benchmark with `./scripts/benchmark-restore.ps1 -Port 
 
 ## Curated operations walkthrough
 
-Use the [isolated operations demo](docs/worklog/2026-09-17-operations-demo.md) for the 39-message Salesforce outage narrative on port 3002. It has a separate PostgreSQL volume and keeps the existing development database intact. Automatic delivery remains disabled; recovery is manual and bounded.
+Use the [isolated operations demo](docs/operations.md) for the 39-message Salesforce outage narrative on port 3002. It has a separate PostgreSQL volume and keeps the existing development database intact. Automatic delivery remains disabled; recovery is manual and bounded.
 
 ## Operations console
 
@@ -68,7 +61,7 @@ The dashboard focuses on incident exposure and recoverable business work, with a
 
 Watch the [recorded Survey-to-recovery walkthrough](docs/evidence/2026-10-18/faultline-walkthrough.webm), then inspect the [verified final state](docs/evidence/2026-10-18/restore-after.png).
 
-See the [visual and interaction verification](docs/worklog/2026-09-18-console-qa.md) for dark-theme, topology and guide captures, browser test instructions and data-preservation details.
+See [operations and verification](docs/operations.md) for browser checks and data-preservation instructions.
 
 ## Version-one boundaries
 

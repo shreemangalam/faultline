@@ -10,7 +10,7 @@ The measured run used the Java 21 service image, PostgreSQL 16, eight concurrent
 
 ## Result
 
-Measured locally with Docker Desktop from revision `62808d8` on 2026-09-14:
+Measured locally with Docker Desktop from revision `3698e39` on 2026-09-14:
 
 | Measure | Result |
 |---|---:|
